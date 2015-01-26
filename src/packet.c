@@ -57,7 +57,7 @@ static char readBuf[READBUF_SIZE];
  *      necessary fields (buffer etc..)
  */
 static void
-client_dopacket(struct Client *client_p, char *buffer, size_t length)
+client_dopacket(struct Client *client_p, char *buffer, unsigned int length)
 {
   /* Update messages received */
   ++me.connection->recv.messages;
@@ -77,28 +77,16 @@ client_dopacket(struct Client *client_p, char *buffer, size_t length)
  * output       - length of <buffer>
  * side effects - one line is copied and removed from the dbuf
  */
-static int
+static unsigned int
 extract_one_line(struct dbuf_queue *qptr, char *buffer)
 {
-  int line_bytes = 0, empty_bytes = 0, phase = 0;
-  unsigned int idx = 0;
-  dlink_node *node = NULL;
+  unsigned int line_bytes = 0, eol_bytes = 0;
+  dlink_node *node;
 
-  /*
-   * Phase 0: "empty" characters before the line
-   * Phase 1: copying the line
-   * Phase 2: "empty" characters after the line
-   *          (delete them as well and free some space in the dbuf)
-   *
-   * Empty characters are CR, LF and space (but, of course, not
-   * in the middle of a line). We try to remove as much of them as we can,
-   * since they simply eat server memory.
-   *
-   * --adx
-   */
   DLINK_FOREACH(node, qptr->blocks.head)
   {
-    struct dbuf_block *block = node->data;
+    const struct dbuf_block *block = node->data;
+    unsigned int idx;
 
     if (node == qptr->blocks.head)
       idx = qptr->pos;
@@ -109,46 +97,45 @@ extract_one_line(struct dbuf_queue *qptr, char *buffer)
     {
       char c = block->data[idx];
 
-      if (IsEol(c) || (c == ' ' && phase != 1))
+      if (IsEol(c))
       {
-        ++empty_bytes;
+        ++eol_bytes;
 
-        if (phase == 1)
-          phase = 2;
+        /* Allow 2 eol bytes per message */
+        if (eol_bytes == 2)
+          goto out;
       }
-      else switch (phase)
-      {
-        case 0: phase = 1;
-        case 1: if (line_bytes++ < IRCD_BUFSIZE - 2)
-                  *buffer++ = c;
-                break;
-        case 2: *buffer = '\0';
-                dbuf_delete(qptr, line_bytes + empty_bytes);
-                return IRCD_MIN(line_bytes, IRCD_BUFSIZE - 2);
-      }
+      else if (eol_bytes)
+        goto out;
+      else if (line_bytes++ < IRCD_BUFSIZE - 2)
+        *buffer++ = c;
     }
   }
 
+out:
+
   /*
-   * Now, if we haven't reached phase 2, ignore all line bytes
+   * Now, if we haven't found an EOL, ignore all line bytes
    * that we have read, since this is a partial line case.
    */
-  if (phase != 2)
-    line_bytes = 0;
-  else
+  if (eol_bytes)
     *buffer = '\0';
+  else
+    line_bytes = 0;
 
   /* Remove what is now unnecessary */
-  dbuf_delete(qptr, line_bytes + empty_bytes);
+  dbuf_delete(qptr, line_bytes + eol_bytes);
+
   return IRCD_MIN(line_bytes, IRCD_BUFSIZE - 2);
 }
+
 /*
  * parse_client_queued - parse client queued messages
  */
 static void
 parse_client_queued(struct Client *client_p)
 {
-  int dolen = 0;
+  unsigned int dolen = 0;
 
   if (IsUnknown(client_p))
   {

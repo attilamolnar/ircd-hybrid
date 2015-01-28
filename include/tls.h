@@ -33,6 +33,8 @@
 #include "tls_none.h"
 #endif
 
+extern void tls_init(void);
+
 extern const char *tls_get_cipher(const tls_data_t *);
 
 #endif /* INCLUDED_tls_h */

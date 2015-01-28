@@ -24,6 +24,72 @@
  * \version $Id$
  */
 
+static int
+always_accept_verify_cb(int preverify_ok, X509_STORE_CTX *x509_ctx)
+{
+  return 1;
+}
+
+/* tls_init()
+ *
+ * inputs       - nothing
+ * output       - nothing
+ * side effects - setups SSL context.
+ */
+void
+tls_init(void)
+{
+  SSL_load_error_strings();
+  SSLeay_add_ssl_algorithms();
+
+  if (!(ConfigServerInfo.server_ctx = SSL_CTX_new(SSLv23_server_method())))
+  {
+    const char *s = ERR_lib_error_string(ERR_get_error());
+
+    fprintf(stderr, "ERROR: Could not initialize the SSL Server context -- %s\n", s);
+    ilog(LOG_TYPE_IRCD, "ERROR: Could not initialize the SSL Server context -- %s", s);
+    exit(EXIT_FAILURE);
+    return;  /* Not reached */
+  }
+
+  SSL_CTX_set_options(ConfigServerInfo.server_ctx, SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TICKET);
+  SSL_CTX_set_options(ConfigServerInfo.server_ctx, SSL_OP_SINGLE_DH_USE|SSL_OP_CIPHER_SERVER_PREFERENCE);
+  SSL_CTX_set_verify(ConfigServerInfo.server_ctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
+                     always_accept_verify_cb);
+  SSL_CTX_set_session_cache_mode(ConfigServerInfo.server_ctx, SSL_SESS_CACHE_OFF);
+  SSL_CTX_set_cipher_list(ConfigServerInfo.server_ctx, "EECDH+HIGH:EDH+HIGH:HIGH:!aNULL");
+
+#if OPENSSL_VERSION_NUMBER >= 0x009080FFL && !defined(OPENSSL_NO_ECDH)
+  {
+    EC_KEY *key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+
+    if (key)
+    {
+      SSL_CTX_set_tmp_ecdh(ConfigServerInfo.server_ctx, key);
+      EC_KEY_free(key);
+    }
+  }
+
+  SSL_CTX_set_options(ConfigServerInfo.server_ctx, SSL_OP_SINGLE_ECDH_USE);
+#endif
+
+  if (!(ConfigServerInfo.client_ctx = SSL_CTX_new(SSLv23_client_method())))
+  {
+    const char *s = ERR_lib_error_string(ERR_get_error());
+
+    fprintf(stderr, "ERROR: Could not initialize the SSL Client context -- %s\n", s);
+    ilog(LOG_TYPE_IRCD, "ERROR: Could not initialize the SSL Client context -- %s", s);
+    exit(EXIT_FAILURE);
+    return;  /* Not reached */
+  }
+
+  SSL_CTX_set_options(ConfigServerInfo.client_ctx, SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TICKET);
+  SSL_CTX_set_options(ConfigServerInfo.client_ctx, SSL_OP_SINGLE_DH_USE);
+  SSL_CTX_set_verify(ConfigServerInfo.client_ctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
+                     always_accept_verify_cb);
+  SSL_CTX_set_session_cache_mode(ConfigServerInfo.client_ctx, SSL_SESS_CACHE_OFF);
+}
+
 const char *
 tls_get_cipher(const tls_data_t *tls_data)
 {

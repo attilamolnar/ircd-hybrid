@@ -491,31 +491,10 @@ serverinfo_ssl_certificate_file: SSL_CERTIFICATE_FILE '=' QSTRING ';'
       break;
     }
 
-    if (SSL_CTX_use_certificate_chain_file(ConfigServerInfo.server_ctx, yylval.string) <= 0 ||
-        SSL_CTX_use_certificate_chain_file(ConfigServerInfo.client_ctx, yylval.string) <= 0)
-    {
-      report_crypto_errors();
-      conf_error_report("Could not open/read certificate file");
-      break;
-    }
+    if (ConfigServerInfo.ssl_certificate_file)
+      MyFree(ConfigServerInfo.ssl_certificate_file);
 
-    if (SSL_CTX_use_PrivateKey_file(ConfigServerInfo.server_ctx, ConfigServerInfo.rsa_private_key_file,
-                                    SSL_FILETYPE_PEM) <= 0 ||
-        SSL_CTX_use_PrivateKey_file(ConfigServerInfo.client_ctx, ConfigServerInfo.rsa_private_key_file,
-                                    SSL_FILETYPE_PEM) <= 0)
-    {
-      report_crypto_errors();
-      conf_error_report("Could not read RSA private key");
-      break;
-    }
-
-    if (!SSL_CTX_check_private_key(ConfigServerInfo.server_ctx) ||
-        !SSL_CTX_check_private_key(ConfigServerInfo.client_ctx))
-    {
-      report_crypto_errors();
-      conf_error_report("Could not read RSA private key");
-      break;
-    }
+    ConfigServerInfo.ssl_certificate_file = xstrdup(yylval.string);
   }
 #endif
 };
@@ -523,58 +502,13 @@ serverinfo_ssl_certificate_file: SSL_CERTIFICATE_FILE '=' QSTRING ';'
 serverinfo_rsa_private_key_file: RSA_PRIVATE_KEY_FILE '=' QSTRING ';'
 {
 #ifdef HAVE_LIBCRYPTO
-  BIO *file = NULL;
-
   if (conf_parser_ctx.pass != 1)
     break;
 
-  if (ConfigServerInfo.rsa_private_key)
-  {
-    RSA_free(ConfigServerInfo.rsa_private_key);
-    ConfigServerInfo.rsa_private_key = NULL;
-  }
-
   if (ConfigServerInfo.rsa_private_key_file)
-  {
     MyFree(ConfigServerInfo.rsa_private_key_file);
-    ConfigServerInfo.rsa_private_key_file = NULL;
-  }
 
   ConfigServerInfo.rsa_private_key_file = xstrdup(yylval.string);
-
-  if ((file = BIO_new_file(yylval.string, "r")) == NULL)
-  {
-    conf_error_report("File open failed, ignoring");
-    break;
-  }
-
-  ConfigServerInfo.rsa_private_key = PEM_read_bio_RSAPrivateKey(file, NULL, 0, NULL);
-
-  BIO_set_close(file, BIO_CLOSE);
-  BIO_free(file);
-
-  if (ConfigServerInfo.rsa_private_key == NULL)
-  {
-    conf_error_report("Couldn't extract key, ignoring");
-    break;
-  }
-
-  if (!RSA_check_key(ConfigServerInfo.rsa_private_key))
-  {
-    RSA_free(ConfigServerInfo.rsa_private_key);
-    ConfigServerInfo.rsa_private_key = NULL;
-
-    conf_error_report("Invalid key, ignoring");
-    break;
-  }
-
-  if (RSA_size(ConfigServerInfo.rsa_private_key) < 128)
-  {
-    RSA_free(ConfigServerInfo.rsa_private_key);
-    ConfigServerInfo.rsa_private_key = NULL;
-
-    conf_error_report("Ignoring serverinfo::rsa_private_key_file -- need at least a 1024 bit key size");
-  }
 #endif
 };
 
@@ -583,26 +517,10 @@ serverinfo_ssl_dh_param_file: SSL_DH_PARAM_FILE '=' QSTRING ';'
 #ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
   {
-    BIO *file = BIO_new_file(yylval.string, "r");
+    if (ConfigServerInfo.ssl_dh_param_file)
+      MyFree(ConfigServerInfo.ssl_dh_param_file);
 
-    if (file)
-    {
-      DH *dh = PEM_read_bio_DHparams(file, NULL, NULL, NULL);
-
-      BIO_free(file);
-
-      if (dh)
-      {
-        if (DH_size(dh) < 128)
-          conf_error_report("Ignoring serverinfo::ssl_dh_param_file -- need at least a 1024 bit DH prime size");
-        else
-          SSL_CTX_set_tmp_dh(ConfigServerInfo.server_ctx, dh);
-
-        DH_free(dh);
-      }
-    }
-    else
-      conf_error_report("Ignoring serverinfo::ssl_dh_param_file -- could not open/read Diffie-Hellman parameter file");
+    ConfigServerInfo.ssl_dh_param_file = xstrdup(yylval.string);
   }
 #endif
 };
@@ -611,7 +529,12 @@ serverinfo_ssl_cipher_list: T_SSL_CIPHER_LIST '=' QSTRING ';'
 {
 #ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
-    SSL_CTX_set_cipher_list(ConfigServerInfo.server_ctx, yylval.string);
+  {
+    if (ConfigServerInfo.ssl_cipher_list)
+      MyFree(ConfigServerInfo.ssl_cipher_list);
+
+    ConfigServerInfo.ssl_cipher_list = xstrdup(yylval.string);
+  }
 #endif
 };
 
@@ -620,11 +543,10 @@ serverinfo_ssl_message_digest_algorithm: SSL_MESSAGE_DIGEST_ALGORITHM '=' QSTRIN
 #ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
   {
-    if ((ConfigServerInfo.message_digest_algorithm = EVP_get_digestbyname(yylval.string)) == NULL)
-    {
-      ConfigServerInfo.message_digest_algorithm = EVP_sha256();
-      conf_error_report("Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
-    }
+    if (ConfigServerInfo.ssl_message_digest_algorithm)
+      MyFree(ConfigServerInfo.ssl_message_digest_algorithm);
+
+    ConfigServerInfo.ssl_message_digest_algorithm = xstrdup(yylval.string);
   }
 #endif
 }
@@ -632,28 +554,13 @@ serverinfo_ssl_message_digest_algorithm: SSL_MESSAGE_DIGEST_ALGORITHM '=' QSTRIN
 serverinfo_ssl_dh_elliptic_curve: SSL_DH_ELLIPTIC_CURVE '=' QSTRING ';'
 {
 #ifdef HAVE_LIBCRYPTO
-#if OPENSSL_VERSION_NUMBER >= 0x009080FFL && !defined(OPENSSL_NO_ECDH)
-  int nid = 0;
-  EC_KEY *key = NULL;
-
   if (conf_parser_ctx.pass == 2)
   {
-    if ((nid = OBJ_sn2nid(yylval.string)) == 0)
-    {
-        conf_error_report("Ignoring serverinfo::serverinfo_ssl_dh_elliptic_curve -- unknown curve name");
-        break;
-    }
+    if (ConfigServerInfo.ssl_dh_elliptic_curve)
+      MyFree(ConfigServerInfo.ssl_dh_elliptic_curve);
 
-    if ((key = EC_KEY_new_by_curve_name(nid)) == NULL)
-    {
-      conf_error_report("Ignoring serverinfo::serverinfo_ssl_dh_elliptic_curve -- could not create curve");
-      break;
-    }
-
-    SSL_CTX_set_tmp_ecdh(ConfigServerInfo.server_ctx, key);
-    EC_KEY_free(key);
-}
-#endif
+    ConfigServerInfo.ssl_dh_elliptic_curve = xstrdup(yylval.string);
+  }
 #endif
 };
 

@@ -758,24 +758,17 @@ set_default_conf(void)
   assert(class_default == class_get_list()->tail->data);
 
 #ifdef HAVE_LIBCRYPTO
-#if OPENSSL_VERSION_NUMBER >= 0x009080FFL && !defined(OPENSSL_NO_ECDH)
-  {
-    EC_KEY *key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+  ConfigServerInfo.rsa_private_key_file = xstrdup("etc/rsa.key");
+  ConfigServerInfo.ssl_certificate_file = xstrdup("etc/cert.pem");
+  ConfigServerInfo.ssl_dh_param_file = xstrdup("etc/dhparam.pem");
+  ConfigServerInfo.ssl_dh_elliptic_curve = xstrdup("secp521r1");
+  ConfigServerInfo.ssl_message_digest_algorithm = xstrdup("sha256");
 
-    if (key)
-    {
-      SSL_CTX_set_tmp_ecdh(ConfigServerInfo.server_ctx, key);
-      EC_KEY_free(key);
-    }
-  }
-
-  SSL_CTX_set_options(ConfigServerInfo.server_ctx, SSL_OP_SINGLE_ECDH_USE);
-#endif
-
-  SSL_CTX_set_cipher_list(ConfigServerInfo.server_ctx, "EECDH+HIGH:EDH+HIGH:HIGH:!aNULL");
-  ConfigServerInfo.message_digest_algorithm = EVP_sha256();
-  ConfigServerInfo.rsa_private_key = NULL;
-  ConfigServerInfo.rsa_private_key_file = NULL;
+  /* The cipher string is specific to the TLS library, we will figure
+   * out the default value for it if needed when applying TLS settings,
+   * not now.
+   */
+  ConfigServerInfo.ssl_cipher_list = NULL;
 #endif
 
   /* ConfigServerInfo.name is not rehashable */

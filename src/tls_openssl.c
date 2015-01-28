@@ -149,3 +149,32 @@ tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
   }
   return length;
 }
+
+int
+tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
+{
+  SSL *ssl = *tls_data;
+  int retlen = SSL_write(ssl, buf, bufsize);
+
+  /* translate openssl error codes, sigh */
+  if (retlen < 0)
+  {
+    switch (SSL_get_error(ssl, retlen))
+    {
+	  case SSL_ERROR_WANT_READ:
+	  	*want_read = 1;
+	    break;  /* retry later, don't register for write events */
+	  case SSL_ERROR_WANT_WRITE:
+		errno = EWOULDBLOCK;
+	  case SSL_ERROR_SYSCALL:
+	    break;
+	  case SSL_ERROR_SSL:
+	    if (errno == EAGAIN)
+		  break;
+		/* fall through */
+	  default:
+	    retlen = errno = 0;  /* either an SSL-specific error or EOF */
+    }
+  }
+  return retlen;
+}

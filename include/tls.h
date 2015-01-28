@@ -41,5 +41,6 @@ extern int tls_isusing(tls_data_t *tls_data);
 extern void tls_free(tls_data_t *tls_data);
 
 extern int tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write);
+extern int tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read);
 
 #endif /* INCLUDED_tls_h */

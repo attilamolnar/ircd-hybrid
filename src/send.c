@@ -168,6 +168,9 @@ void
 send_queued_write(struct Client *to)
 {
   int retlen = 0;
+#ifdef HAVE_TLS
+  int want_read = 0;
+#endif
 
   /*
    ** Once socket is marked dead, we cannot start writing to it,
@@ -183,29 +186,12 @@ send_queued_write(struct Client *to)
     {
       struct dbuf_block *first = to->connection->buf_sendq.blocks.head->data;
 
-#ifdef HAVE_LIBCRYPTO
-      if (to->connection->fd.ssl)
+#ifdef HAVE_TLS
+      if (tls_isusing(&to->connection->fd.ssl))
       {
-        retlen = SSL_write(to->connection->fd.ssl, first->data + to->connection->buf_sendq.pos, first->size - to->connection->buf_sendq.pos);
-
-        /* translate openssl error codes, sigh */
-        if (retlen < 0)
-        {
-          switch (SSL_get_error(to->connection->fd.ssl, retlen))
-          {
-            case SSL_ERROR_WANT_READ:
-              return;  /* retry later, don't register for write events */
-            case SSL_ERROR_WANT_WRITE:
-              errno = EWOULDBLOCK;
-            case SSL_ERROR_SYSCALL:
-              break;
-            case SSL_ERROR_SSL:
-              if (errno == EAGAIN)
-                break;
-            default:
-              retlen = errno = 0;  /* either an SSL-specific error or EOF */
-          }
-        }
+        retlen = tls_write(&to->connection->fd.ssl, first->data + to->connection->buf_sendq.pos, first->size - to->connection->buf_sendq.pos, &want_read);
+		if (want_read)
+			return; /* retry later, don't register for write events */
       }
       else
 #endif

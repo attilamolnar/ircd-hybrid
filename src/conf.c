@@ -1235,10 +1235,20 @@ clear_out_old_conf(void)
     RSA_free(ConfigServerInfo.rsa_private_key);
     ConfigServerInfo.rsa_private_key = NULL;
   }
+#endif
 
   MyFree(ConfigServerInfo.rsa_private_key_file);
   ConfigServerInfo.rsa_private_key_file = NULL;
-#endif
+  MyFree(ConfigServerInfo.ssl_certificate_file);
+  ConfigServerInfo.ssl_certificate_file = NULL;
+  MyFree(ConfigServerInfo.ssl_dh_param_file);
+  ConfigServerInfo.ssl_dh_param_file = NULL;
+  MyFree(ConfigServerInfo.ssl_dh_elliptic_curve);
+  ConfigServerInfo.ssl_dh_elliptic_curve = NULL;
+  MyFree(ConfigServerInfo.ssl_cipher_list);
+  ConfigServerInfo.ssl_cipher_list = NULL;
+  MyFree(ConfigServerInfo.ssl_message_digest_algorithm);
+  ConfigServerInfo.ssl_message_digest_algorithm = NULL;
 
   /* Clean out ConfigAdminInfo */
   MyFree(ConfigAdminInfo.name);

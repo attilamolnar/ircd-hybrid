@@ -206,7 +206,7 @@ close_connection(struct Client *client_p)
   detach_conf(client_p, CONF_CLIENT | CONF_OPER | CONF_SERVER);
 }
 
-#ifdef HAVE_LIBCRYPTO
+#ifdef HAVE_TLS
 /*
  * ssl_handshake - let OpenSSL initialize the protocol. Register for
  * read/write events if necessary.

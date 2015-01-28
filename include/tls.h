@@ -38,5 +38,6 @@ extern void tls_init(void);
 extern const char *tls_get_cipher(const tls_data_t *);
 
 extern int tls_isusing(tls_data_t *tls_data);
+extern void tls_free(tls_data_t *tls_data);
 
 #endif /* INCLUDED_tls_h */

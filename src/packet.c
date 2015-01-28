@@ -366,11 +366,7 @@ read_packet(fde_t *fd, void *data)
       return;
     }
   }
-#ifdef HAVE_LIBCRYPTO
-  while (length == sizeof(readBuf) || fd->ssl);
-#else
-  while (length == sizeof(readBuf));
-#endif
+  while (length == sizeof(readBuf) || tls_isusing(&fd->ssl));
 
   /* If we get here, we need to register for another COMM_SELECT_READ */
   comm_setselect(fd, COMM_SELECT_READ, read_packet, client_p, 0);

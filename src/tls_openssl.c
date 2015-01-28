@@ -110,3 +110,10 @@ tls_isusing(tls_data_t *tls_data)
   SSL *ssl = *tls_data;
   return (ssl != NULL);
 }
+
+void
+tls_free(tls_data_t *tls_data)
+{
+  SSL_free(*tls_data);
+  *tls_data = NULL;
+}

@@ -125,9 +125,9 @@ fd_close(fde_t *F)
 
   delete_resolver_queries(F);
 
-#ifdef HAVE_LIBCRYPTO
-  if (F->ssl)
-    SSL_free(F->ssl);
+#ifdef HAVE_TLS
+  if (tls_isusing(&F->ssl))
+    tls_free(&F->ssl);
 #endif
 
   if (fd_hash[hashv] == F)

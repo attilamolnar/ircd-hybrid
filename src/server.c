@@ -870,7 +870,7 @@ ssl_connect_init(struct Client *client_p, struct MaskItem *conf, fde_t *fd)
   }
 
   if (!EmptyString(conf->cipher_list))
-    SSL_set_cipher_list(client_p->connection->fd.ssl, conf->cipher_list);
+    tls_set_ciphers(&client_p->connection->fd.ssl, conf->cipher_list);
 
   ssl_server_handshake(NULL, client_p);
 }

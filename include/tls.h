@@ -52,4 +52,6 @@ extern int tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int 
 
 extern void tls_shutdown(tls_data_t *tls_data);
 
+extern int tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list);
+
 #endif /* INCLUDED_tls_h */

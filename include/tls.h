@@ -63,4 +63,6 @@ extern void tls_shutdown(tls_data_t *tls_data);
 
 extern int tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list);
 
+extern int tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *raw_result);
+
 #endif /* INCLUDED_tls_h */

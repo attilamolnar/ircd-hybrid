@@ -300,6 +300,11 @@ struct config_serverinfo_entry
   char *network_name;
   char *network_desc;
   char *rsa_private_key_file;
+  char *ssl_certificate_file;
+  char *ssl_dh_param_file;
+  char *ssl_dh_elliptic_curve;
+  char *ssl_cipher_list;
+  char *ssl_message_digest_algorithm;
   void *rsa_private_key;
   void *server_ctx;
   void *client_ctx;

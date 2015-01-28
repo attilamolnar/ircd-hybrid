@@ -288,6 +288,9 @@ read_packet(fde_t *fd, void *data)
 {
   struct Client *const client_p = data;
   int length = 0;
+#ifdef HAVE_TLS
+  int want_write = 0;
+#endif
 
   if (IsDefunct(client_p))
     return;
@@ -299,30 +302,14 @@ read_packet(fde_t *fd, void *data)
    */
   do
   {
-#ifdef HAVE_LIBCRYPTO
-    if (fd->ssl)
-    {
-      length = SSL_read(fd->ssl, readBuf, sizeof(readBuf));
-
-      /* translate openssl error codes, sigh */
-      if (length < 0)
-        switch (SSL_get_error(fd->ssl, length))
-        {
-          case SSL_ERROR_WANT_WRITE:
-            comm_setselect(fd, COMM_SELECT_WRITE, sendq_unblocked, client_p, 0);
-            return;
-          case SSL_ERROR_WANT_READ:
-              errno = EWOULDBLOCK;
-          case SSL_ERROR_SYSCALL:
-              break;
-          case SSL_ERROR_SSL:
-            if (errno == EAGAIN)
-              break;
-          default:
-            length = errno = 0;
-        }
-    }
-    else
+#ifdef HAVE_TLS
+	if (tls_isusing(&fd->ssl))
+	{
+		length = tls_read(&fd->ssl, readBuf, sizeof(readBuf), &want_write);
+		if (want_write)
+			comm_setselect(fd, COMM_SELECT_WRITE, sendq_unblocked, client_p, 0);
+	}
+	else
 #endif
     {
       length = recv(fd->fd, readBuf, sizeof(readBuf), 0);

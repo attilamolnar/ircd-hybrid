@@ -103,3 +103,10 @@ tls_get_cipher(const tls_data_t *tls_data)
            SSL_get_cipher(ssl), bits);
   return buffer;
 }
+
+int
+tls_isusing(tls_data_t *tls_data)
+{
+  SSL *ssl = *tls_data;
+  return (ssl != NULL);
+}

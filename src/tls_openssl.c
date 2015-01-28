@@ -178,3 +178,13 @@ tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
   }
   return retlen;
 }
+
+void
+tls_shutdown(tls_data_t *tls_data)
+{
+  SSL *ssl = *tls_data;
+
+  SSL_set_shutdown(ssl, SSL_RECEIVED_SHUTDOWN);
+  if (!SSL_shutdown(ssl))
+    SSL_shutdown(ssl);
+}

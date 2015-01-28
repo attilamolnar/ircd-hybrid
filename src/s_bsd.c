@@ -190,14 +190,9 @@ close_connection(struct Client *client_p)
   else
     ++ServerStats.is_ni;
 
-#ifdef HAVE_LIBCRYPTO
-  if (client_p->connection->fd.ssl)
-  {
-    SSL_set_shutdown(client_p->connection->fd.ssl, SSL_RECEIVED_SHUTDOWN);
-
-    if (!SSL_shutdown(client_p->connection->fd.ssl))
-      SSL_shutdown(client_p->connection->fd.ssl);
-  }
+#ifdef HAVE_TLS
+  if (tls_isusing(&client_p->connection->fd.ssl))
+    tls_shutdown(&client_p->connection->fd.ssl);
 #endif
   if (client_p->connection->fd.flags.open)
     fd_close(&client_p->connection->fd);

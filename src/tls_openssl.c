@@ -117,3 +117,35 @@ tls_free(tls_data_t *tls_data)
   SSL_free(*tls_data);
   *tls_data = NULL;
 }
+
+int
+tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
+{
+  SSL *ssl = *tls_data;
+  int length = SSL_read(ssl, buf, bufsize);
+
+  /* translate openssl error codes, sigh */
+  if (length < 0)
+  {
+	switch (SSL_get_error(ssl, length))
+	{
+	  case SSL_ERROR_WANT_WRITE:
+	  {
+		/* OpenSSL wants to write, we signal this to the caller and do nothing about that here */
+	    *want_write = 1;
+		break;
+	  }
+	  case SSL_ERROR_WANT_READ:
+		  errno = EWOULDBLOCK;
+	  case SSL_ERROR_SYSCALL:
+		  break;
+	  case SSL_ERROR_SSL:
+		if (errno == EAGAIN)
+		  break;
+		/* fall through */
+	  default:
+		length = errno = 0;
+	}
+  }
+  return length;
+}

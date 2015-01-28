@@ -215,7 +215,7 @@ static void
 ssl_handshake(fde_t *fd, void *data)
 {
   struct Client *client_p = data;
-  X509 *cert = NULL;
+  int res;
 
   tls_handshake_status_t ret = tls_handshake(&client_p->connection->fd.ssl, TLS_ROLE_SERVER, NULL);
   if (ret != TLS_HANDSHAKE_DONE)
@@ -246,29 +246,9 @@ ssl_handshake(fde_t *fd, void *data)
 
   comm_settimeout(&client_p->connection->fd, 0, NULL, NULL);
 
-  if ((cert = SSL_get_peer_certificate(client_p->connection->fd.ssl)))
-  {
-    int res = SSL_get_verify_result(client_p->connection->fd.ssl);
-    char buf[EVP_MAX_MD_SIZE * 2 + 1] = "";
-    unsigned char md[EVP_MAX_MD_SIZE] = "";
-
-    if (res == X509_V_OK || res == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN ||
-        res == X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE ||
-        res == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT)
-    {
-      unsigned int n = 0;
-
-      if (X509_digest(cert, ConfigServerInfo.message_digest_algorithm, md, &n))
-      {
-        binary_to_hex(md, buf, n);
-        client_p->certfp = xstrdup(buf);
-      }
-    }
-    else
-      ilog(LOG_TYPE_IRCD, "Client %s!%s@%s gave bad SSL client certificate: %d",
-           client_p->name, client_p->username, client_p->host, res);
-    X509_free(cert);
-  }
+  if (!tls_verify_cert(&client_p->connection->fd.ssl, ConfigServerInfo.message_digest_algorithm, &client_p->certfp, &res))
+    ilog(LOG_TYPE_IRCD, "Client %s!%s@%s gave bad SSL client certificate: %d",
+         client_p->name, client_p->username, client_p->host, res);
 
   start_auth(client_p);
 }

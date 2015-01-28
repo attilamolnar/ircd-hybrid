@@ -24,6 +24,9 @@
  * \version $Id$
  */
 
+/* for binary_to_hex */
+#include "rsa.h"
+
 static int
 always_accept_verify_cb(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
@@ -242,4 +245,35 @@ tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
 	    *errstr = ERR_error_string(ERR_get_error(), NULL);
 	  return TLS_HANDSHAKE_ERROR;
   }
+}
+
+int
+tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *raw_result)
+{
+  SSL *ssl = *tls_data;
+  X509 *cert = SSL_get_peer_certificate(ssl);
+  unsigned int n;
+  char buf[EVP_MAX_MD_SIZE * 2 + 1];
+  unsigned char md[EVP_MAX_MD_SIZE];
+  int ret = 0;
+
+  /* Accept NULL return from SSL_get_peer_certificate */
+  if (!cert)
+	return 1;
+
+  int res = SSL_get_verify_result(ssl);
+  if (res == X509_V_OK || res == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN ||
+      res == X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE ||
+      res == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT)
+  {
+	ret = 1;
+    if (X509_digest(cert, digest, md, &n))
+    {
+      binary_to_hex(md, buf, n);
+      *fingerprint = xstrdup(buf);
+    }
+  }
+  X509_free(cert);
+  *raw_result = res;
+  return ret;
 }

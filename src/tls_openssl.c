@@ -209,3 +209,10 @@ tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
   SSL_set_fd(ssl, fd);
   return 1;
 }
+
+int
+tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
+{
+  SSL_set_cipher_list(*tls_data, cipher_list);
+  return 1;
+}

@@ -322,7 +322,7 @@ server_estab(struct Client *client_p)
 #endif
     sendto_realops_flags(UMODE_ALL, L_ADMIN, SEND_NOTICE,
                          "Link with %s established: [SSL: %s, Compression/Expansion method: %s/%s] (Capabilities: %s)",
-                         get_client_name(client_p, SHOW_IP), ssl_get_cipher(client_p->connection->fd.ssl),
+                         get_client_name(client_p, SHOW_IP), tls_get_cipher(&client_p->connection->fd.ssl),
 #ifndef OPENSSL_NO_COMP
                          compression ? SSL_COMP_get_name(compression) : "NONE",
                          expansion ? SSL_COMP_get_name(expansion) : "NONE",
@@ -333,7 +333,7 @@ server_estab(struct Client *client_p)
     /* Now show the masked hostname/IP to opers */
     sendto_realops_flags(UMODE_ALL, L_OPER, SEND_NOTICE,
                          "Link with %s established: [SSL: %s, Compression/Expansion method: %s/%s] (Capabilities: %s)",
-                         get_client_name(client_p, MASK_IP), ssl_get_cipher(client_p->connection->fd.ssl),
+                         get_client_name(client_p, MASK_IP), tls_get_cipher(&client_p->connection->fd.ssl),
 #ifndef OPENSSL_NO_COMP
                          compression ? SSL_COMP_get_name(compression) : "NONE",
                          expansion ? SSL_COMP_get_name(expansion) : "NONE",
@@ -342,7 +342,7 @@ server_estab(struct Client *client_p)
 #endif
                          show_capabilities(client_p));
     ilog(LOG_TYPE_IRCD, "Link with %s established: [SSL: %s, Compression/Expansion method: %s/%s] (Capabilities: %s)",
-         get_client_name(client_p, SHOW_IP), ssl_get_cipher(client_p->connection->fd.ssl),
+         get_client_name(client_p, SHOW_IP), tls_get_cipher(&client_p->connection->fd.ssl),
 #ifndef OPENSSL_NO_COMP
          compression ? SSL_COMP_get_name(compression) : "NONE",
          expansion ? SSL_COMP_get_name(expansion) : "NONE",

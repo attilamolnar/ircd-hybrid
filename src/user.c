@@ -47,6 +47,7 @@
 #include "misc.h"
 #include "parse.h"
 #include "watch.h"
+#include "tls.h"
 
 static char umode_buffer[IRCD_BUFSIZE];
 static const char *uid_get(void);
@@ -302,12 +303,12 @@ user_welcome(struct Client *source_p)
   static const char built_date[] = "unknown";
 #endif
 
-#ifdef HAVE_LIBCRYPTO
+#ifdef HAVE_TLS
   if (HasFlag(source_p, FLAGS_SSL))
   {
     AddUMode(source_p, UMODE_SSL);
     sendto_one_notice(source_p, &me, ":*** Connected securely via %s",
-                      ssl_get_cipher(source_p->connection->fd.ssl));
+                      tls_get_cipher(&source_p->connection->fd.ssl));
   }
 #endif
 

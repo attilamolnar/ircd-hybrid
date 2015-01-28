@@ -1249,6 +1249,26 @@ clear_out_old_conf(void)
   close_listeners();
 }
 
+static void
+conf_handle_tls(int cold)
+{
+  char *tlserror;
+  if (!tls_new_cred(/* ..., */ &tlserror))
+  {
+    if (cold)
+    {
+      ilog(LOG_TYPE_IRCD, "Error while initializing TLS: %s", tlserror);
+      exit(-1);
+    }
+    else
+    {
+      /* failed to load new settings/certs, old ones remain active */
+      sendto_realops_flags(UMODE_ALL, L_ALL, SEND_NOTICE,
+                           "Error reloading TLS settings: %s", tlserror);
+    }
+  }
+}
+
 /* read_conf_files()
  *
  * inputs       - cold start YES or NO
@@ -1297,6 +1317,7 @@ read_conf_files(int cold)
   fclose(conf_parser_ctx.conf_file);
 
   log_reopen_all();
+  conf_handle_tls(cold);
 
   add_isupport("NICKLEN", NULL, ConfigServerInfo.max_nick_length);
   add_isupport("NETWORK", ConfigServerInfo.network_name, -1);

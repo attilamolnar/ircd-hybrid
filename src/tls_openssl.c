@@ -19,28 +19,21 @@
  *  USA
  */
 
-/*! \file misc.h
- * \brief A header for the miscellaneous functions.
+/*! \file tls_openssl.c
+ * \brief Includes all OpenSSL-specific TLS functions
  * \version $Id$
  */
 
-#ifndef INCLUDED_misc_h
-#define INCLUDED_misc_h
+const char *
+tls_get_cipher(const tls_data_t *tls_data)
+{
+  static char buffer[IRCD_BUFSIZE];
+  int bits = 0;
+  SSL *ssl = *tls_data;
 
-extern const char *date(time_t);
-extern const char *smalldate(time_t);
-extern const char *myctime(time_t);
+  SSL_CIPHER_get_bits(SSL_get_current_cipher(ssl), &bits);
 
-/* Just blindly define our own MIN/MAX macro */
-#define IRCD_MAX(a, b)  ((a) > (b) ? (a) : (b))
-#define IRCD_MIN(a, b)  ((a) < (b) ? (a) : (b))
-
-#define _1MEG     (1024.0f)
-#define _1GIG     (1024.0f*1024.0f)
-#define _1TER     (1024.0f*1024.0f*1024.0f)
-#define _GMKs(x)  (((x) > _1TER) ? "Terabytes" : (((x) > _1GIG) ? "Gigabytes" :\
-                  (((x) > _1MEG) ? "Megabytes" : "Kilobytes")))
-#define _GMKv(x)  (((x) > _1TER) ? (float)((x)/_1TER) : (((x) > _1GIG) ? \
-                   (float)((x)/_1GIG) : (((x) > _1MEG) ? (float)((x)/_1MEG) : \
-                   (float)(x))))
-#endif
+  snprintf(buffer, sizeof(buffer), "%s-%s-%d", SSL_get_version(ssl),
+           SSL_get_cipher(ssl), bits);
+  return buffer;
+}

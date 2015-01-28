@@ -30,6 +30,7 @@
 
 #include "ircd_defs.h"
 #define FD_DESC_SZ 128  /* hostlen + comment */
+#include "tls.h"
 
 enum
 {
@@ -82,9 +83,7 @@ typedef struct _fde
     void *data;
     /* We'd also add the retry count here when we get to that -- adrian */
   } connect;
-#ifdef HAVE_LIBCRYPTO
-  SSL *ssl;
-#endif
+  tls_data_t ssl;
   struct _fde *hnext;
 } fde_t;
 

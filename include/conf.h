@@ -30,6 +30,7 @@
 #include "ircd_defs.h"
 #include "client.h"
 #include "conf_class.h"
+#include "tls.h"
 
 
 #define CONF_NOREASON "<No reason supplied>"
@@ -292,9 +293,7 @@ struct config_serverhide_entry
 
 struct config_serverinfo_entry
 {
-#ifdef HAVE_LIBCRYPTO
-  const EVP_MD *message_digest_algorithm;
-#endif
+  tls_md_t message_digest_algorithm;
   char *sid;
   char *name;
   char *description;

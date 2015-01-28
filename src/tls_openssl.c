@@ -188,3 +188,24 @@ tls_shutdown(tls_data_t *tls_data)
   if (!SSL_shutdown(ssl))
     SSL_shutdown(ssl);
 }
+
+int
+tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
+{
+  SSL *ssl;
+  if (role == TLS_ROLE_SERVER)
+    ssl = SSL_new(ConfigServerInfo.server_ctx);
+  else
+    ssl = SSL_new(ConfigServerInfo.client_ctx);
+
+  if (!ssl)
+  {
+      ilog(LOG_TYPE_IRCD, "SSL_new() ERROR! -- %s",
+           ERR_error_string(ERR_get_error(), NULL));
+      return 0;
+  }
+
+  *tls_data = ssl;
+  SSL_set_fd(ssl, fd);
+  return 1;
+}

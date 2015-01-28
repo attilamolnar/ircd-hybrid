@@ -323,21 +323,17 @@ add_connection(struct Listener *listener, struct irc_ssaddr *irn, int fd)
   client_p->connection->listener = listener;
   ++listener->ref_count;
 
-#ifdef HAVE_LIBCRYPTO
+#ifdef HAVE_TLS
   if (listener->flags & LISTENER_SSL)
   {
-    if ((client_p->connection->fd.ssl = SSL_new(ConfigServerInfo.server_ctx)) == NULL)
+  	if (!tls_new(&client_p->connection->fd.ssl, fd, TLS_ROLE_SERVER))
     {
-      ilog(LOG_TYPE_IRCD, "SSL_new() ERROR! -- %s",
-           ERR_error_string(ERR_get_error(), NULL));
-
       SetDead(client_p);
-      exit_client(client_p, "SSL_new failed");
+      exit_client(client_p, "TLS context initialization failed");
       return;
     }
 
     AddFlag(client_p, FLAGS_SSL);
-    SSL_set_fd(client_p->connection->fd.ssl, fd);
     ssl_handshake(NULL, client_p);
   }
   else

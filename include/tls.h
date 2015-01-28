@@ -33,11 +33,18 @@
 #include "tls_none.h"
 #endif
 
+typedef enum _tls_role
+{
+  TLS_ROLE_SERVER,
+  TLS_ROLE_CLIENT
+} tls_role_t;
+
 extern void tls_init(void);
 
 extern const char *tls_get_cipher(const tls_data_t *);
 
 extern int tls_isusing(tls_data_t *tls_data);
+extern int tls_new(tls_data_t *tls_data, int fd, tls_role_t role);
 extern void tls_free(tls_data_t *tls_data);
 
 extern int tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write);

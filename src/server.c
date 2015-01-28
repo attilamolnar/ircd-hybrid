@@ -862,16 +862,12 @@ ssl_server_handshake(fde_t *fd, void *data)
 static void
 ssl_connect_init(struct Client *client_p, struct MaskItem *conf, fde_t *fd)
 {
-  if ((client_p->connection->fd.ssl = SSL_new(ConfigServerInfo.client_ctx)) == NULL)
+  if (!tls_new(&client_p->connection->fd.ssl, fd->fd, TLS_ROLE_CLIENT))
   {
-    ilog(LOG_TYPE_IRCD, "SSL_new() ERROR! -- %s",
-         ERR_error_string(ERR_get_error(), NULL));
     SetDead(client_p);
-    exit_client(client_p, "SSL_new failed");
+    exit_client(client_p, "TLS context initialization failed");
     return;
   }
-
-  SSL_set_fd(fd->ssl, fd->fd);
 
   if (!EmptyString(conf->cipher_list))
     SSL_set_cipher_list(client_p->connection->fd.ssl, conf->cipher_list);

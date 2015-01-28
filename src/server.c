@@ -798,9 +798,10 @@ ssl_server_handshake(fde_t *fd, void *data)
 {
   struct Client *client_p = data;
   X509 *cert = NULL;
-  int ret = 0;
+  const char *sslerr;
 
-  if ((ret = SSL_connect(client_p->connection->fd.ssl)) <= 0)
+  tls_handshake_status_t ret = tls_handshake(&client_p->connection->fd.ssl, TLS_ROLE_CLIENT, &sslerr);
+  if (ret != TLS_HANDSHAKE_DONE)
   {
     if ((CurrentTime - client_p->connection->firsttime) > CONNECTTIMEOUT)
     {
@@ -808,19 +809,18 @@ ssl_server_handshake(fde_t *fd, void *data)
       return;
     }
 
-    switch (SSL_get_error(client_p->connection->fd.ssl, ret))
+    switch (ret)
     {
-      case SSL_ERROR_WANT_WRITE:
+      case TLS_HANDSHAKE_WANT_WRITE:
         comm_setselect(&client_p->connection->fd, COMM_SELECT_WRITE,
                        ssl_server_handshake, client_p, CONNECTTIMEOUT);
         return;
-      case SSL_ERROR_WANT_READ:
+      case TLS_HANDSHAKE_WANT_READ:
         comm_setselect(&client_p->connection->fd, COMM_SELECT_READ,
                        ssl_server_handshake, client_p, CONNECTTIMEOUT);
         return;
       default:
       {
-        const char *sslerr = ERR_error_string(ERR_get_error(), NULL);
         sendto_realops_flags(UMODE_ALL, L_ALL, SEND_NOTICE,
                              "Error connecting to %s: %s", client_p->name,
                              sslerr ? sslerr : "unknown SSL error");

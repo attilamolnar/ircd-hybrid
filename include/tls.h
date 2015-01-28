@@ -39,6 +39,14 @@ typedef enum _tls_role
   TLS_ROLE_CLIENT
 } tls_role_t;
 
+typedef enum _tls_handshake_status
+{
+  TLS_HANDSHAKE_DONE,
+  TLS_HANDSHAKE_WANT_READ,
+  TLS_HANDSHAKE_WANT_WRITE,
+  TLS_HANDSHAKE_ERROR
+} tls_handshake_status_t;
+
 extern void tls_init(void);
 
 extern const char *tls_get_cipher(const tls_data_t *);
@@ -47,6 +55,7 @@ extern int tls_isusing(tls_data_t *tls_data);
 extern int tls_new(tls_data_t *tls_data, int fd, tls_role_t role);
 extern void tls_free(tls_data_t *tls_data);
 
+extern tls_handshake_status_t tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr);
 extern int tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write);
 extern int tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read);
 

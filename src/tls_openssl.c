@@ -216,3 +216,30 @@ tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
   SSL_set_cipher_list(*tls_data, cipher_list);
   return 1;
 }
+
+tls_handshake_status_t
+tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
+{
+  SSL *ssl = *tls_data;
+  int ret;
+
+  if (role == TLS_ROLE_SERVER)
+    ret = SSL_accept(ssl);
+  else
+    ret = SSL_connect(ssl);
+
+  if (ret > 0)
+    return TLS_HANDSHAKE_DONE;
+
+  switch (SSL_get_error(ssl, ret))
+  {
+    case SSL_ERROR_WANT_WRITE:
+      return TLS_HANDSHAKE_WANT_WRITE;
+	case SSL_ERROR_WANT_READ:
+      return TLS_HANDSHAKE_WANT_READ;
+	default:
+	  if (errstr)
+	    *errstr = ERR_error_string(ERR_get_error(), NULL);
+	  return TLS_HANDSHAKE_ERROR;
+  }
+}

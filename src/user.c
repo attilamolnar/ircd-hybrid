@@ -921,7 +921,7 @@ oper_up(struct Client *source_p)
   sendto_one_numeric(source_p, &me, RPL_YOUREOPER);
 }
 
-static char new_uid[TOTALSIDUID + 1];  /* Allow for \0 */
+static unsigned long new_uid = 0;
 
 int
 valid_sid(const char *sid)
@@ -935,64 +935,6 @@ valid_sid(const char *sid)
 }
 
 /*
- * init_uid()
- *
- * inputs	- NONE
- * output	- NONE
- * side effects	- new_uid is filled in with server id portion (sid)
- *		  (first 3 bytes) or defaulted to 'A'.
- *	          Rest is filled in with 'A'
- */
-void
-init_uid(void)
-{
-  memset(new_uid, 0, sizeof(new_uid));
-
-  if (!EmptyString(ConfigServerInfo.sid))
-    strlcpy(new_uid, ConfigServerInfo.sid, sizeof(new_uid));
-
-  for (unsigned int i = 0; i < IRC_MAXSID; ++i)
-    if (new_uid[i] == '\0')
-      new_uid[i] = 'A';
-
-  /* NOTE: if IRC_MAXUID != 6, this will have to be rewritten */
-  memcpy(new_uid + IRC_MAXSID, "AAAAA@", IRC_MAXUID);
-}
-
-/*
- * add_one_to_uid
- *
- * inputs	- index number into new_uid
- * output	- NONE
- * side effects	- new_uid is incremented by one
- *		  note this is a recursive function
- */
-static void
-add_one_to_uid(unsigned int i)
-{
-  if (i != IRC_MAXSID)  /* Not reached server SID portion yet? */
-  {
-    if (new_uid[i] == 'Z')
-      new_uid[i] = '0';
-    else if (new_uid[i] == '9')
-    {
-      new_uid[i] = 'A';
-      add_one_to_uid(i - 1);
-    }
-    else
-      ++new_uid[i];
-  }
-  else
-  {
-    /* NOTE: if IRC_MAXUID != 6, this will have to be rewritten */
-    if (new_uid[i] == 'Z')
-      memcpy(new_uid + IRC_MAXSID, "AAAAAA", IRC_MAXUID);
-    else
-      ++new_uid[i];
-  }
-}
-
-/*
  * uid_get
  *
  * inputs       - struct Client *
@@ -1002,8 +944,10 @@ add_one_to_uid(unsigned int i)
 static const char *
 uid_get(void)
 {
-  add_one_to_uid(TOTALSIDUID - 1);  /* Index from 0 */
-  return new_uid;
+  static char uidbuf[TOTALSIDUID + 1]; /* Allow for \0 */
+  snprintf(uidbuf, sizeof(uidbuf), "%s%06lu", ConfigServerInfo.sid,
+           (new_uid++) % 1000000);
+  return uidbuf;
 }
 
 /*

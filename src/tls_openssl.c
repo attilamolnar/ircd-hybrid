@@ -24,8 +24,12 @@
  * \version $Id$
  */
 
-/* for binary_to_hex */
+#include "stdinc.h"
+#include "tls.h"
+#include "conf.h"
+#include "log.h"
 #include "rsa.h"
+#include "memory.h"
 
 static int
 always_accept_verify_cb(int preverify_ok, X509_STORE_CTX *x509_ctx)

@@ -30,6 +30,8 @@
 #include "config.h"
 
 #ifdef HAVE_LIBCRYPTO
+#include "tls.h"
+
 extern void binary_to_hex(const unsigned char *, char *, unsigned int);
 extern void report_crypto_errors(void);
 extern int generate_challenge(char **, char **, RSA *);

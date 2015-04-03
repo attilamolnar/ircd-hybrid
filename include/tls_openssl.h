@@ -30,6 +30,11 @@
 
 #define HAVE_TLS
 
+#ifdef HAVE_LIBCRYPTO
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+#endif
+
 typedef SSL * tls_data_t;
 typedef const EVP_MD * tls_md_t;
 

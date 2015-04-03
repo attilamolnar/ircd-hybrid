@@ -54,8 +54,8 @@ tls_init(void)
     exit(EXIT_FAILURE);
   }
 
-  gnutls_dh_params_t dh_params;
-  ret = gnutls_dh_params_init(&dh_params);
+//  gnutls_dh_params_t dh_params;
+//  ret = gnutls_dh_params_init(&dh_params);
   // XXX load dhparams from file?
 
   gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, "NORMAL", NULL);
@@ -69,6 +69,8 @@ tls_new_cred()
   ret = gnutls_certificate_set_x509_key_file(ConfigServerInfo.tls_ctx.x509_cred, ConfigServerInfo.ssl_certificate_file, ConfigServerInfo.rsa_private_key_file, GNUTLS_X509_FMT_PEM);
   if (ret < 0)
   {
+    ilog(LOG_TYPE_IRCD, "Could not set TLS keys -- %s", gnutls_strerror(ret));
+    return 0;
   }
 
   ConfigServerInfo.message_digest_algorithm = gnutls_digest_get_id(ConfigServerInfo.ssl_message_digest_algorithm);

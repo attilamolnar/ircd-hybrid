@@ -1265,19 +1265,18 @@ clear_out_old_conf(void)
 static void
 conf_handle_tls(int cold)
 {
-  char *tlserror;
-  if (!tls_new_cred(/* ..., */ &tlserror))
+  if (!tls_new_cred())
   {
     if (cold)
     {
-      ilog(LOG_TYPE_IRCD, "Error while initializing TLS: %s", tlserror);
+      ilog(LOG_TYPE_IRCD, "Error while initializing TLS");
       exit(-1);
     }
     else
     {
       /* failed to load new settings/certs, old ones remain active */
       sendto_realops_flags(UMODE_ALL, L_ALL, SEND_NOTICE,
-                           "Error reloading TLS settings: %s", tlserror);
+                           "Error reloading TLS settings, check the ircd log"); // report_crypto_errors logs this
     }
   }
 }

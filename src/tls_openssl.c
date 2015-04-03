@@ -98,16 +98,12 @@ tls_init(void)
 }
 
 int
-tls_new_cred(char **errstr)
+tls_new_cred()
 {
-  if (errstr)
-    *errstr = NULL;
-
   if (SSL_CTX_use_certificate_chain_file(ConfigServerInfo.server_ctx, ConfigServerInfo.ssl_certificate_file) <= 0 ||
     SSL_CTX_use_certificate_chain_file(ConfigServerInfo.client_ctx, ConfigServerInfo.ssl_certificate_file) <= 0)
   {
     report_crypto_errors();
-    conf_error_report("Could not open/read certificate file");
     return 0;
   }
 
@@ -115,7 +111,6 @@ tls_new_cred(char **errstr)
     SSL_CTX_use_PrivateKey_file(ConfigServerInfo.client_ctx, ConfigServerInfo.rsa_private_key_file, SSL_FILETYPE_PEM) <= 0)
   {
     report_crypto_errors();
-    conf_error_report("Could not read RSA private key");
     return 0;
   }
 
@@ -123,7 +118,6 @@ tls_new_cred(char **errstr)
     !SSL_CTX_check_private_key(ConfigServerInfo.client_ctx))
   {
     report_crypto_errors();
-    conf_error_report("Could not read RSA private key");
     return 0;
   }
 
@@ -167,26 +161,27 @@ tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
   /* translate openssl error codes, sigh */
   if (length < 0)
   {
-	switch (SSL_get_error(ssl, length))
-	{
-	  case SSL_ERROR_WANT_WRITE:
-	  {
-		/* OpenSSL wants to write, we signal this to the caller and do nothing about that here */
-	    *want_write = 1;
-		break;
-	  }
-	  case SSL_ERROR_WANT_READ:
-		  errno = EWOULDBLOCK;
-	  case SSL_ERROR_SYSCALL:
-		  break;
-	  case SSL_ERROR_SSL:
-		if (errno == EAGAIN)
-		  break;
-		/* fall through */
-	  default:
-		length = errno = 0;
-	}
+    switch (SSL_get_error(ssl, length))
+    {
+      case SSL_ERROR_WANT_WRITE:
+      {
+        /* OpenSSL wants to write, we signal this to the caller and do nothing about that here */
+        *want_write = 1;
+        break;
+      }
+      case SSL_ERROR_WANT_READ:
+        errno = EWOULDBLOCK;
+      case SSL_ERROR_SYSCALL:
+        break;
+      case SSL_ERROR_SSL:
+        if (errno == EAGAIN)
+          break;
+      /* fall through */
+      default:
+        length = errno = 0;
+    }
   }
+
   return length;
 }
 
@@ -201,21 +196,23 @@ tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
   {
     switch (SSL_get_error(ssl, retlen))
     {
-	  case SSL_ERROR_WANT_READ:
-	  	*want_read = 1;
-	    break;  /* retry later, don't register for write events */
-	  case SSL_ERROR_WANT_WRITE:
-		errno = EWOULDBLOCK;
-	  case SSL_ERROR_SYSCALL:
-	    break;
-	  case SSL_ERROR_SSL:
-	    if (errno == EAGAIN)
-		  break;
-		/* fall through */
-	  default:
-	    retlen = errno = 0;  /* either an SSL-specific error or EOF */
+      case SSL_ERROR_WANT_READ:
+        *want_read = 1;
+        break;  /* retry later, don't register for write events */
+      case SSL_ERROR_WANT_WRITE:
+        errno = EWOULDBLOCK;
+        break;
+      case SSL_ERROR_SYSCALL:
+        break;
+      case SSL_ERROR_SSL:
+        if (errno == EAGAIN)
+        break;
+      /* fall through */
+      default:
+        retlen = errno = 0;  /* either an SSL-specific error or EOF */
     }
   }
+
   return retlen;
 }
 
@@ -233,6 +230,7 @@ int
 tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
 {
   SSL *ssl;
+
   if (role == TLS_ROLE_SERVER)
     ssl = SSL_new(ConfigServerInfo.server_ctx);
   else
@@ -275,17 +273,16 @@ tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
   {
     case SSL_ERROR_WANT_WRITE:
       return TLS_HANDSHAKE_WANT_WRITE;
-	case SSL_ERROR_WANT_READ:
+    case SSL_ERROR_WANT_READ:
       return TLS_HANDSHAKE_WANT_READ;
-	default:
-  {
-    const char *error = ERR_error_string(ERR_get_error(), NULL);
-    printf("ERROR %s\n", error);
+    default:
+    {
+      const char *error = ERR_error_string(ERR_get_error(), NULL);
 
-	  if (errstr)
-	    *errstr = error;
-	  return TLS_HANDSHAKE_ERROR;
-  }
+      if (errstr)
+        *errstr = error;
+      return TLS_HANDSHAKE_ERROR;
+    }
   }
 }
 
@@ -301,20 +298,21 @@ tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *
 
   /* Accept NULL return from SSL_get_peer_certificate */
   if (!cert)
-	return 1;
+    return 1;
 
   int res = SSL_get_verify_result(ssl);
   if (res == X509_V_OK || res == X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN ||
       res == X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE ||
       res == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT)
   {
-	ret = 1;
+    ret = 1;
     if (X509_digest(cert, digest, md, &n))
     {
       binary_to_hex(md, buf, n);
       *fingerprint = xstrdup(buf);
     }
   }
+
   X509_free(cert);
   *raw_result = res;
   return ret;

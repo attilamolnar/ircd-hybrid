@@ -283,6 +283,7 @@ tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
 
       if (errstr)
         *errstr = error;
+
       return TLS_HANDSHAKE_ERROR;
     }
   }

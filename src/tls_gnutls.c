@@ -124,6 +124,35 @@ tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
 tls_handshake_status_t
 tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
 {
+  int ret = gnutls_handshake(*tls_data);
+
+  if (ret >= 0)
+    return TLS_HANDSHAKE_DONE;
+
+  if (ret == GNUTLS_E_AGAIN || ret == GNUTLS_E_INTERRUPTED)
+  {
+    // Handshake needs resuming later, read() or write() would have blocked.
+
+    if (gnutls_record_get_direction(*tls_data) == 0)
+    {
+      // gnutls_handshake() wants to read() again.
+      return TLS_HANDSHAKE_WANT_READ;
+    }
+    else
+    {
+      // gnutls_handshake() wants to write() again.
+      return TLS_HANDSHAKE_WANT_WRITE;
+    }
+  }
+  else
+  {
+    const char *error = gnutls_strerror(ret);
+
+    if (errstr)
+      *errstr = error;
+
+    return TLS_HANDSHAKE_ERROR;
+  }
 }
 
 int

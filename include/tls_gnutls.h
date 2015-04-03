@@ -33,8 +33,10 @@
 #define HAVE_TLS
 #define HAVE_TLS_GNUTLS
 
-typedef SSL * tls_data_t;
-typedef const EVP_MD * tls_md_t;
+#include <gnutls/gnutls.h>
+
+typedef gnutls_session_t tls_data_t;
+typedef void * tls_md_t;
 
 #endif /* defined(HAVE_LIBGNUTLS) && !defined(HAVE_LIBCRYPTO) */
 

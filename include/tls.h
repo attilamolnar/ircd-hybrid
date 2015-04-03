@@ -29,6 +29,8 @@
 
 #ifdef HAVE_LIBCRYPTO
 #include "tls_openssl.h"
+#elif defined(HAVE_LIBGNUTLS)
+#include "tls_gnutls.h"
 #else
 #include "tls_none.h"
 #endif

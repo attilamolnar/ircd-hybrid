@@ -168,7 +168,9 @@ struct MaskItem
   char              *certfp;
   char              *whois;
   char              *cipher_list;
-  void              *rsa_public_key;
+#ifdef HAVE_LIBCRYPTO
+  RSA               *rsa_public_key;
+#endif
 };
 
 struct exempt
@@ -293,7 +295,6 @@ struct config_serverhide_entry
 
 struct config_serverinfo_entry
 {
-  tls_md_t message_digest_algorithm;
   char *sid;
   char *name;
   char *description;
@@ -305,8 +306,11 @@ struct config_serverinfo_entry
   char *ssl_dh_elliptic_curve;
   char *ssl_cipher_list;
   char *ssl_message_digest_algorithm;
-  void *rsa_private_key;
+#ifdef HAVE_LIBCRYPTO
+  RSA  *rsa_private_key;
+#endif
   tls_context_t tls_ctx;
+  tls_md_t message_digest_algorithm;
   unsigned int hub;
   unsigned int default_max_clients;
   unsigned int max_nick_length;

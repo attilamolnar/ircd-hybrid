@@ -126,6 +126,8 @@ tls_new_cred()
     return 0;
   }
 
+  // XXX SSL_CTX_set_tmp_ecdh
+
   if (ConfigServerInfo.ssl_message_digest_algorithm == NULL)
   {
     ConfigServerInfo.message_digest_algorithm = EVP_sha256();

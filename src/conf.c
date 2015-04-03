@@ -767,20 +767,6 @@ set_default_conf(void)
    */
   assert(class_default == class_get_list()->tail->data);
 
-#ifdef HAVE_LIBCRYPTO
-  ConfigServerInfo.rsa_private_key_file = xstrdup("etc/rsa.key");
-  ConfigServerInfo.ssl_certificate_file = xstrdup("etc/cert.pem");
-  ConfigServerInfo.ssl_dh_param_file = xstrdup("etc/dhparam.pem");
-  ConfigServerInfo.ssl_dh_elliptic_curve = xstrdup("secp521r1");
-  ConfigServerInfo.ssl_message_digest_algorithm = xstrdup("sha256");
-
-  /* The cipher string is specific to the TLS library, we will figure
-   * out the default value for it if needed when applying TLS settings,
-   * not now.
-   */
-  ConfigServerInfo.ssl_cipher_list = NULL;
-#endif
-
   /* ConfigServerInfo.name is not rehashable */
   /* ConfigServerInfo.name = ConfigServerInfo.name; */
   ConfigServerInfo.description = NULL;

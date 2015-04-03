@@ -36,7 +36,7 @@
 #include <gnutls/gnutls.h>
 
 typedef gnutls_session_t tls_data_t;
-typedef void * tls_md_t;
+typedef gnutls_digest_algorithm_t tls_md_t;
 
 #endif /* defined(HAVE_LIBGNUTLS) && !defined(HAVE_LIBCRYPTO) */
 

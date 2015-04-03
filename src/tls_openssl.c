@@ -208,7 +208,7 @@ tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
         break;
       case SSL_ERROR_SSL:
         if (errno == EAGAIN)
-        break;
+          break;
       /* fall through */
       default:
         retlen = errno = 0;  /* either an SSL-specific error or EOF */

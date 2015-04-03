@@ -88,11 +88,45 @@ tls_free(tls_data_t *tls_data)
 int
 tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
 {
+  int length = gnutls_record_recv(tls_data, buf, bufsize);
+
+  if (length <= 0)
+  {
+    switch (length)
+    {
+      case GNUTLS_E_AGAIN:
+      case GNUTLS_E_INTERRUPTED:
+        errno = EWOULDBLOCK;
+        return -1;
+      case 0: // closed
+      default: // other error
+        return -1;
+    }
+  }
+
+  return length;
 }
 
 int
 tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
 {
+  int length = gnutls_record_send(tls_data, buf, bufsize);
+
+  if (length <= 0)
+  {
+    switch (length)
+    {
+      case GNUTLS_E_AGAIN:
+      case GNUTLS_E_INTERRUPTED:
+      case 0:
+        errno = EWOULDBLOCK;
+        return 0;
+      default:
+        return -1;
+    }
+  }
+
+  return length;
 }
 
 void
@@ -105,7 +139,7 @@ tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
 {
   gnutls_init(tls_data, role == TLS_ROLE_SERVER ? GNUTLS_SERVER : GNUTLS_CLIENT);
 
-	gnutls_priority_set(*tls_data, ConfigServerInfo.tls_ctx.priorities);
+  gnutls_priority_set(*tls_data, ConfigServerInfo.tls_ctx.priorities);
   gnutls_credentials_set(*tls_data, GNUTLS_CRD_CERTIFICATE, ConfigServerInfo.tls_ctx.x509_cred);
   //gnutls_dh_set_prime_bits(session->sess, dh_bits);
   //gnutls_transport_set_ptr(session->sess, reinterpret_cast<gnutls_transport_ptr_t>(session));

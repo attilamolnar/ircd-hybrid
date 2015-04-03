@@ -306,8 +306,7 @@ struct config_serverinfo_entry
   char *ssl_cipher_list;
   char *ssl_message_digest_algorithm;
   void *rsa_private_key;
-  void *server_ctx;
-  void *client_ctx;
+  tls_context_t tls_ctx;
   unsigned int hub;
   unsigned int default_max_clients;
   unsigned int max_nick_length;

@@ -30,6 +30,7 @@
 
 typedef void * tls_data_t;
 typedef void * tls_md_t;
+typedef void * tls_context_t;
 
 #define tls_isusing(x) (0)
 // FIXME: check this, was originally inline int tls_isusing(tls_data_t *tls_data) { return 0; }

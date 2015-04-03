@@ -39,6 +39,12 @@
 typedef SSL * tls_data_t;
 typedef const EVP_MD * tls_md_t;
 
+typedef struct
+{
+  SSL_CTX *server_ctx;
+  SSL_CTX *client_ctx;
+} tls_context_t;
+
 #endif /* HAVE_LIBCRYPTO */
 
 #endif /* INCLUDED_tls_openssl_h */

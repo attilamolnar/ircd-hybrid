@@ -38,6 +38,12 @@
 typedef gnutls_session_t tls_data_t;
 typedef gnutls_digest_algorithm_t tls_md_t;
 
+typedef struct
+{
+  gnutls_certificate_credentials_t x509_cred;
+} tls_context_t;
+
+
 #endif /* defined(HAVE_LIBGNUTLS) && !defined(HAVE_LIBCRYPTO) */
 
 #endif /* INCLUDED_tls_openssl_h */

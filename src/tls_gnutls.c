@@ -42,11 +42,32 @@
 void
 tls_init(void)
 {
+  int ret;
+
+  ret = gnutls_certificate_allocate_credentials(&ConfigServerInfo.tls_ctx.x509_cred);
+  if (ret < 0)
+  {
+    const char *error = gnutls_strerror(ret);
+
+    fprintf(stderr, "ERROR: Could not initialize the SSL credentials -- %s\n", error);
+    ilog(LOG_TYPE_IRCD, "ERROR: Could not initialize the SSL credentials -- %s", error);
+    exit(EXIT_FAILURE);
+  }
+
+  gnutls_dh_params_t dh_params;
+  ret = gnutls_dh_params_init(&dh_params);
+  // XXX load dhparams from file?
 }
 
 int
 tls_new_cred()
 {
+  int ret;
+
+  ret = gnutls_certificate_set_x509_key_file(ConfigServerInfo.tls_ctx.x509_cred, ConfigServerInfo.ssl_certificate_file, ConfigServerInfo.rsa_private_key_file, GNUTLS_X509_FMT_PEM);
+  if (ret < 0)
+  {
+  }
 }
 
 const char *

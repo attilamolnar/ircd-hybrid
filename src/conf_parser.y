@@ -52,13 +52,6 @@
 #include "user.h"
 #include "motd.h"
 
-#ifdef HAVE_LIBCRYPTO
-#include <openssl/rsa.h>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-#include <openssl/dh.h>
-#endif
-
 #include "rsa.h"
 
 int yylex(void);
@@ -481,7 +474,6 @@ serverinfo_item:        serverinfo_name |
 
 serverinfo_ssl_certificate_file: SSL_CERTIFICATE_FILE '=' QSTRING ';'
 {
-#ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
   {
     if (!ConfigServerInfo.rsa_private_key_file)
@@ -495,12 +487,10 @@ serverinfo_ssl_certificate_file: SSL_CERTIFICATE_FILE '=' QSTRING ';'
 
     ConfigServerInfo.ssl_certificate_file = xstrdup(yylval.string);
   }
-#endif
 };
 
 serverinfo_rsa_private_key_file: RSA_PRIVATE_KEY_FILE '=' QSTRING ';'
 {
-#ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass != 1)
     break;
 
@@ -508,12 +498,10 @@ serverinfo_rsa_private_key_file: RSA_PRIVATE_KEY_FILE '=' QSTRING ';'
     MyFree(ConfigServerInfo.rsa_private_key_file);
 
   ConfigServerInfo.rsa_private_key_file = xstrdup(yylval.string);
-#endif
 };
 
 serverinfo_ssl_dh_param_file: SSL_DH_PARAM_FILE '=' QSTRING ';'
 {
-#ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
   {
     if (ConfigServerInfo.ssl_dh_param_file)
@@ -521,12 +509,10 @@ serverinfo_ssl_dh_param_file: SSL_DH_PARAM_FILE '=' QSTRING ';'
 
     ConfigServerInfo.ssl_dh_param_file = xstrdup(yylval.string);
   }
-#endif
 };
 
 serverinfo_ssl_cipher_list: T_SSL_CIPHER_LIST '=' QSTRING ';'
 {
-#ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
   {
     if (ConfigServerInfo.ssl_cipher_list)
@@ -534,12 +520,10 @@ serverinfo_ssl_cipher_list: T_SSL_CIPHER_LIST '=' QSTRING ';'
 
     ConfigServerInfo.ssl_cipher_list = xstrdup(yylval.string);
   }
-#endif
 };
 
 serverinfo_ssl_message_digest_algorithm: SSL_MESSAGE_DIGEST_ALGORITHM '=' QSTRING ';'
 {
-#ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
   {
     if (ConfigServerInfo.ssl_message_digest_algorithm)
@@ -547,12 +531,10 @@ serverinfo_ssl_message_digest_algorithm: SSL_MESSAGE_DIGEST_ALGORITHM '=' QSTRIN
 
     ConfigServerInfo.ssl_message_digest_algorithm = xstrdup(yylval.string);
   }
-#endif
 }
 
 serverinfo_ssl_dh_elliptic_curve: SSL_DH_ELLIPTIC_CURVE '=' QSTRING ';'
 {
-#ifdef HAVE_LIBCRYPTO
   if (conf_parser_ctx.pass == 2)
   {
     if (ConfigServerInfo.ssl_dh_elliptic_curve)
@@ -560,7 +542,6 @@ serverinfo_ssl_dh_elliptic_curve: SSL_DH_ELLIPTIC_CURVE '=' QSTRING ';'
 
     ConfigServerInfo.ssl_dh_elliptic_curve = xstrdup(yylval.string);
   }
-#endif
 };
 
 serverinfo_name: NAME '=' QSTRING ';'
@@ -1008,14 +989,9 @@ oper_entry: OPERATOR
 
   if (!block_state.name.buf[0])
     break;
-#ifdef HAVE_LIBCRYPTO
   if (!block_state.file.buf[0] &&
       !block_state.rpass.buf[0])
     break;
-#else
-  if (!block_state.rpass.buf[0])
-    break;
-#endif
 
   DLINK_FOREACH(node, block_state.mask.list.head)
   {
@@ -1053,6 +1029,7 @@ oper_entry: OPERATOR
     conf_add_class_to_conf(conf, block_state.class.buf);
 
 #ifdef HAVE_LIBCRYPTO
+#if 0
     if (block_state.file.buf[0])
     {
       BIO *file = NULL;
@@ -1077,6 +1054,7 @@ oper_entry: OPERATOR
       BIO_set_close(file, BIO_CLOSE);
       BIO_free(file);
     }
+#endif
 #endif /* HAVE_LIBCRYPTO */
   }
 };
@@ -1607,7 +1585,7 @@ port_item: NUMBER
 {
   if (conf_parser_ctx.pass == 2)
   {
-#ifndef HAVE_LIBCRYPTO
+#ifndef HAVE_TLS
     if (block_state.flags.value & LISTENER_SSL)
     {
       conf_error_report("SSL not available - port closed");
@@ -1620,7 +1598,7 @@ port_item: NUMBER
 {
   if (conf_parser_ctx.pass == 2)
   {
-#ifndef HAVE_LIBCRYPTO
+#ifndef HAVE_TLS
     if (block_state.flags.value & LISTENER_SSL)
     {
       conf_error_report("SSL not available - port closed");
@@ -2264,12 +2242,12 @@ connect_class: CLASS '=' QSTRING ';'
 
 connect_ssl_cipher_list: T_SSL_CIPHER_LIST '=' QSTRING ';'
 {
-#ifdef HAVE_LIBCRYPTO
+#ifdef HAVE_TLS
   if (conf_parser_ctx.pass == 2)
     strlcpy(block_state.ciph.buf, yylval.string, sizeof(block_state.ciph.buf));
 #else
   if (conf_parser_ctx.pass == 2)
-    conf_error_report("Ignoring connect::ciphers -- no OpenSSL support");
+    conf_error_report("Ignoring connect::ciphers -- no TLS support");
 #endif
 };
 

@@ -57,6 +57,8 @@ tls_init(void)
   gnutls_dh_params_t dh_params;
   ret = gnutls_dh_params_init(&dh_params);
   // XXX load dhparams from file?
+
+  gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, "NORMAL", NULL);
 }
 
 int
@@ -265,7 +267,7 @@ tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *
 
   return 1;
 
-info_done_dealloc:
+ info_done_dealloc:
   gnutls_x509_crt_deinit(cert);
   return 0;
 }

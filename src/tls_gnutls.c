@@ -66,6 +66,9 @@ tls_new_cred()
 {
   int ret;
 
+  if (!ConfigServerInfo.ssl_certificate_file || !ConfigServerInfo.rsa_private_key_file)
+    return 0;
+
   ret = gnutls_certificate_set_x509_key_file(ConfigServerInfo.tls_ctx.x509_cred, ConfigServerInfo.ssl_certificate_file, ConfigServerInfo.rsa_private_key_file, GNUTLS_X509_FMT_PEM);
   if (ret < 0)
   {
@@ -73,11 +76,18 @@ tls_new_cred()
     return 0;
   }
 
-  ConfigServerInfo.message_digest_algorithm = gnutls_digest_get_id(ConfigServerInfo.ssl_message_digest_algorithm);
-  if (ConfigServerInfo.message_digest_algorithm == GNUTLS_DIG_UNKNOWN)
+  if (ConfigServerInfo.ssl_message_digest_algorithm == NULL)
   {
     ConfigServerInfo.message_digest_algorithm = GNUTLS_DIG_SHA256;
-    ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
+  }
+  else
+  {
+    ConfigServerInfo.message_digest_algorithm = gnutls_digest_get_id(ConfigServerInfo.ssl_message_digest_algorithm);
+    if (ConfigServerInfo.message_digest_algorithm == GNUTLS_DIG_UNKNOWN)
+    {
+      ConfigServerInfo.message_digest_algorithm = GNUTLS_DIG_SHA256;
+     ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
+    }
   }
 
   return 1;
@@ -126,7 +136,6 @@ tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
       case GNUTLS_E_AGAIN:
       case GNUTLS_E_INTERRUPTED:
         errno = EWOULDBLOCK;
-        return -1;
       case 0: // closed
       default: // other error
         return -1;

@@ -1981,7 +1981,7 @@ YY_DECL
     
 #line 80 "conf_lexer.l"
 
-#line 1984 "conf_lexer.c"
+#line 1985 "conf_lexer.c"
 
 	if ( !(yy_init) )
 		{
@@ -3401,7 +3401,7 @@ YY_RULE_SETUP
 #line 384 "conf_lexer.l"
 ECHO;
 	YY_BREAK
-#line 3404 "conf_lexer.c"
+#line 3405 "conf_lexer.c"
 
 	case YY_END_OF_BUFFER:
 		{

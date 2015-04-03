@@ -123,6 +123,13 @@ tls_new_cred()
     return 0;
   }
 
+  ConfigServerInfo.message_digest_algorithm = EVP_get_digestbyname(ConfigServerInfo.ssl_message_digest_algorithm);
+  if (ConfigServerInfo.message_digest_algorithm == NULL)
+  {
+    ConfigServerInfo.message_digest_algorithm = EVP_sha256();
+    ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
+  }
+
   return 1;
 }
 

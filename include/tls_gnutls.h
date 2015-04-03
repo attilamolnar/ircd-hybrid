@@ -41,6 +41,7 @@ typedef gnutls_digest_algorithm_t tls_md_t;
 typedef struct
 {
   gnutls_certificate_credentials_t x509_cred;
+  gnutls_priority_t priorities;
 } tls_context_t;
 
 

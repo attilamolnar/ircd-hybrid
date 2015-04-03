@@ -105,7 +105,7 @@ tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
 {
   gnutls_init(tls_data, role == TLS_ROLE_SERVER ? GNUTLS_SERVER : GNUTLS_CLIENT);
 
-  gnutls_set_default_priority(*tls_data);
+	gnutls_priority_set(*tls_data, ConfigServerInfo.tls_ctx.priorities);
   gnutls_credentials_set(*tls_data, GNUTLS_CRD_CERTIFICATE, ConfigServerInfo.tls_ctx.x509_cred);
   //gnutls_dh_set_prime_bits(session->sess, dh_bits);
   //gnutls_transport_set_ptr(session->sess, reinterpret_cast<gnutls_transport_ptr_t>(session));
@@ -119,6 +119,19 @@ tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
 int
 tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
 {
+  int ret;
+  const char *prioerror;
+
+  ret = gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, cipher_list, &prioerror);
+  if (ret < 0)
+  {
+    // gnutls did not understand the user supplied string, log and fall back to the default priorities
+    ilog(LOG_TYPE_IRCD, "Failed to set gnutls priorities to \"%s\": %s Syntax error at position %u, falling back to default (NORMAL)", cipher_list, gnutls_strerror(ret), (unsigned int) (prioerror - cipher_list));
+    gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, "NORMAL", NULL);
+    return 0;
+  }
+
+  return 1;
 }
 
 tls_handshake_status_t

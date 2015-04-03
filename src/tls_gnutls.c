@@ -1,0 +1,102 @@
+/*
+ *  ircd-hybrid: an advanced, lightweight Internet Relay Chat Daemon (ircd)
+ *
+ *  Copyright (c) 1997-2015 ircd-hybrid development team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301
+ *  USA
+ */
+
+/*! \file tls_gnutls.c
+ * \brief Includes all GNUTLS-specific TLS functions
+ * \version $Id$
+ */
+
+#include "stdinc.h"
+#include "tls.h"
+#include "conf.h"
+#include "log.h"
+#include "rsa.h"
+#include "memory.h"
+
+#ifdef HAVE_TLS_GNUTLS
+
+/* tls_init()
+ *
+ * inputs       - nothing
+ * output       - nothing
+ * side effects - setups SSL context.
+ */
+void
+tls_init(void)
+{
+}
+
+int
+tls_new_cred()
+{
+}
+
+const char *
+tls_get_cipher(const tls_data_t *tls_data)
+{
+}
+
+int
+tls_isusing(tls_data_t *tls_data)
+{
+}
+
+void
+tls_free(tls_data_t *tls_data)
+{
+}
+
+int
+tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
+{
+}
+
+int
+tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
+{
+}
+
+void
+tls_shutdown(tls_data_t *tls_data)
+{
+}
+
+int
+tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
+{
+}
+
+int
+tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
+{
+}
+
+tls_handshake_status_t
+tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
+{
+}
+
+int
+tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *raw_result)
+{
+}
+
+#endif /* HAVE_TLS_GNUTLS */

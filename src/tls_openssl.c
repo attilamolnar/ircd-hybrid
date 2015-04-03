@@ -31,6 +31,8 @@
 #include "rsa.h"
 #include "memory.h"
 
+#ifdef HAVE_TLS_OPENSSL
+
 static int
 always_accept_verify_cb(int preverify_ok, X509_STORE_CTX *x509_ctx)
 {
@@ -317,3 +319,5 @@ tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *
   *raw_result = res;
   return ret;
 }
+
+#endif /* HAVE_TLS_OPENSSL */

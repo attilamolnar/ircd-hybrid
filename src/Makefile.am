@@ -56,6 +56,7 @@ ircd_SOURCES = auth.c            \
                s_bsd.c           \
                send.c            \
                server.c          \
+	       tls_gnutls.c      \
                tls_openssl.c     \
                user.c            \
                version.c         \

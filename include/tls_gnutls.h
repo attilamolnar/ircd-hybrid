@@ -19,26 +19,23 @@
  *  USA
  */
 
-/*! \file tls_openssl.h
- * \brief OpenSSL-specific TLS types
+/*! \file tls_gnutls.h
+ * \brief GNUTLS-specific TLS types
  * \version $Id$
  */
 
 
-#ifndef INCLUDED_tls_openssl_h
-#define INCLUDED_tls_openssl_h
+#ifndef INCLUDED_tls_gnutls_h
+#define INCLUDED_tls_gnutls_h
 
-#ifdef HAVE_LIBCRYPTO
+#if defined(HAVE_LIBGNUTLS) && !defined(HAVE_LIBCRYPTO)
 
 #define HAVE_TLS
-#define HAVE_TLS_OPENSSL
-
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+#define HAVE_TLS_GNUTLS
 
 typedef SSL * tls_data_t;
 typedef const EVP_MD * tls_md_t;
 
-#endif /* HAVE_LIBCRYPTO */
+#endif /* defined(HAVE_LIBGNUTLS) && !defined(HAVE_LIBCRYPTO) */
 
 #endif /* INCLUDED_tls_openssl_h */

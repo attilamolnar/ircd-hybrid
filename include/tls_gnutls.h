@@ -34,6 +34,7 @@
 #define HAVE_TLS_GNUTLS
 
 #include <gnutls/gnutls.h>
+#include <gnutls/x509.h>
 
 typedef gnutls_session_t tls_data_t;
 typedef gnutls_digest_algorithm_t tls_md_t;

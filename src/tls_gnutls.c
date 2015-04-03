@@ -158,6 +158,48 @@ tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
 int
 tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *raw_result)
 {
+  int ret;
+  gnutls_x509_crt_t cert;
+  const gnutls_datum_t *cert_list;
+  unsigned int cert_list_size;
+  unsigned char digestbuf[IRCD_BUFSIZE];
+  size_t digest_size = sizeof(digestbuf);
+  char buf[IRCD_BUFSIZE];
+
+  cert_list_size = 0;
+  cert_list = gnutls_certificate_get_peers(tls_data, &cert_list_size);
+  if (cert_list == NULL)
+  {
+    /* no certificate */
+    return 1;
+  }
+
+  ret = gnutls_x509_crt_init(&cert);
+  if (ret < 0)
+  {
+    return 1;
+  }
+
+  ret = gnutls_x509_crt_import(cert, &cert_list[0], GNUTLS_X509_FMT_DER);
+  if (ret < 0)
+  {
+    goto info_done_dealloc;
+  }
+
+  ret = gnutls_x509_crt_get_fingerprint(cert, digest, digest, &digest_size);
+  if (ret < 0)
+  {
+    goto info_done_dealloc;
+  }
+
+  binary_to_hex(digestbuf, buf, digest_size);
+  *fingerprint = xstrdup(buf);
+
+  return 1;
+
+info_done_dealloc:
+  gnutls_x509_crt_deinit(cert);
+  return 0;
 }
 
 #endif /* HAVE_TLS_GNUTLS */

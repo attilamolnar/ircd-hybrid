@@ -33,6 +33,7 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/opensslv.h>
+#endif
 
 #include "memory.h"
 #include "rsa.h"
@@ -40,6 +41,7 @@
 #include "log.h"
 
 
+#ifdef HAVE_LIBCRYPTO
 /*
  * report_crypto_errors - Dump crypto error list to log
  */
@@ -51,6 +53,7 @@ report_crypto_errors(void)
   while ((e = ERR_get_error()))
     ilog(LOG_TYPE_IRCD, "SSL error: %s", ERR_error_string(e, 0));
 }
+#endif
 
 void
 binary_to_hex(const unsigned char *bin, char *hex, unsigned int length)
@@ -66,6 +69,7 @@ binary_to_hex(const unsigned char *bin, char *hex, unsigned int length)
   *hex = '\0';
 }
 
+#ifdef HAVE_LIBCRYPTO
 int
 get_randomness(unsigned char *buf, int length)
 {

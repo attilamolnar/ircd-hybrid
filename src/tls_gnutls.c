@@ -140,7 +140,6 @@ tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
       case GNUTLS_E_INTERRUPTED:
       case 0:
         errno = EWOULDBLOCK;
-        return 0;
       default:
         return -1;
     }
@@ -176,6 +175,8 @@ tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
 {
   int ret;
   const char *prioerror;
+
+  gnutls_priority_deinit(ConfigServerInfo.tls_ctx.priorities);
 
   ret = gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, cipher_list, &prioerror);
   if (ret < 0)

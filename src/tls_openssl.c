@@ -51,7 +51,7 @@ tls_init(void)
   SSL_load_error_strings();
   SSLeay_add_ssl_algorithms();
 
-  if (!(ConfigServerInfo.server_ctx = SSL_CTX_new(SSLv23_server_method())))
+  if (!(ConfigServerInfo.tls_ctx.server_ctx = SSL_CTX_new(SSLv23_server_method())))
   {
     const char *s = ERR_lib_error_string(ERR_get_error());
 
@@ -61,12 +61,12 @@ tls_init(void)
     return;  /* Not reached */
   }
 
-  SSL_CTX_set_options(ConfigServerInfo.server_ctx, SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TICKET);
-  SSL_CTX_set_options(ConfigServerInfo.server_ctx, SSL_OP_SINGLE_DH_USE|SSL_OP_CIPHER_SERVER_PREFERENCE);
-  SSL_CTX_set_verify(ConfigServerInfo.server_ctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
+  SSL_CTX_set_options(ConfigServerInfo.tls_ctx.server_ctx, SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TICKET);
+  SSL_CTX_set_options(ConfigServerInfo.tls_ctx.server_ctx, SSL_OP_SINGLE_DH_USE|SSL_OP_CIPHER_SERVER_PREFERENCE);
+  SSL_CTX_set_verify(ConfigServerInfo.tls_ctx.server_ctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
                      always_accept_verify_cb);
-  SSL_CTX_set_session_cache_mode(ConfigServerInfo.server_ctx, SSL_SESS_CACHE_OFF);
-  SSL_CTX_set_cipher_list(ConfigServerInfo.server_ctx, "EECDH+HIGH:EDH+HIGH:HIGH:!aNULL");
+  SSL_CTX_set_session_cache_mode(ConfigServerInfo.tls_ctx.server_ctx, SSL_SESS_CACHE_OFF);
+  SSL_CTX_set_cipher_list(ConfigServerInfo.tls_ctx.server_ctx, "EECDH+HIGH:EDH+HIGH:HIGH:!aNULL");
 
 #if OPENSSL_VERSION_NUMBER >= 0x009080FFL && !defined(OPENSSL_NO_ECDH)
   {
@@ -74,15 +74,15 @@ tls_init(void)
 
     if (key)
     {
-      SSL_CTX_set_tmp_ecdh(ConfigServerInfo.server_ctx, key);
+      SSL_CTX_set_tmp_ecdh(ConfigServerInfo.tls_ctx.server_ctx, key);
       EC_KEY_free(key);
     }
   }
 
-  SSL_CTX_set_options(ConfigServerInfo.server_ctx, SSL_OP_SINGLE_ECDH_USE);
+  SSL_CTX_set_options(ConfigServerInfo.tls_ctx.server_ctx, SSL_OP_SINGLE_ECDH_USE);
 #endif
 
-  if (!(ConfigServerInfo.client_ctx = SSL_CTX_new(SSLv23_client_method())))
+  if (!(ConfigServerInfo.tls_ctx.client_ctx = SSL_CTX_new(SSLv23_client_method())))
   {
     const char *s = ERR_lib_error_string(ERR_get_error());
 
@@ -92,32 +92,32 @@ tls_init(void)
     return;  /* Not reached */
   }
 
-  SSL_CTX_set_options(ConfigServerInfo.client_ctx, SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TICKET);
-  SSL_CTX_set_options(ConfigServerInfo.client_ctx, SSL_OP_SINGLE_DH_USE);
-  SSL_CTX_set_verify(ConfigServerInfo.client_ctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
+  SSL_CTX_set_options(ConfigServerInfo.tls_ctx.client_ctx, SSL_OP_NO_SSLv2|SSL_OP_NO_SSLv3|SSL_OP_NO_TICKET);
+  SSL_CTX_set_options(ConfigServerInfo.tls_ctx.client_ctx, SSL_OP_SINGLE_DH_USE);
+  SSL_CTX_set_verify(ConfigServerInfo.tls_ctx.client_ctx, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE,
                      always_accept_verify_cb);
-  SSL_CTX_set_session_cache_mode(ConfigServerInfo.client_ctx, SSL_SESS_CACHE_OFF);
+  SSL_CTX_set_session_cache_mode(ConfigServerInfo.tls_ctx.client_ctx, SSL_SESS_CACHE_OFF);
 }
 
 int
 tls_new_cred()
 {
-  if (SSL_CTX_use_certificate_chain_file(ConfigServerInfo.server_ctx, ConfigServerInfo.ssl_certificate_file) <= 0 ||
-    SSL_CTX_use_certificate_chain_file(ConfigServerInfo.client_ctx, ConfigServerInfo.ssl_certificate_file) <= 0)
+  if (SSL_CTX_use_certificate_chain_file(ConfigServerInfo.tls_ctx.server_ctx, ConfigServerInfo.ssl_certificate_file) <= 0 ||
+    SSL_CTX_use_certificate_chain_file(ConfigServerInfo.tls_ctx.client_ctx, ConfigServerInfo.ssl_certificate_file) <= 0)
   {
     report_crypto_errors();
     return 0;
   }
 
-  if (SSL_CTX_use_PrivateKey_file(ConfigServerInfo.server_ctx, ConfigServerInfo.rsa_private_key_file, SSL_FILETYPE_PEM) <= 0 ||
-    SSL_CTX_use_PrivateKey_file(ConfigServerInfo.client_ctx, ConfigServerInfo.rsa_private_key_file, SSL_FILETYPE_PEM) <= 0)
+  if (SSL_CTX_use_PrivateKey_file(ConfigServerInfo.tls_ctx.server_ctx, ConfigServerInfo.rsa_private_key_file, SSL_FILETYPE_PEM) <= 0 ||
+    SSL_CTX_use_PrivateKey_file(ConfigServerInfo.tls_ctx.client_ctx, ConfigServerInfo.rsa_private_key_file, SSL_FILETYPE_PEM) <= 0)
   {
     report_crypto_errors();
     return 0;
   }
 
-  if (!SSL_CTX_check_private_key(ConfigServerInfo.server_ctx) ||
-    !SSL_CTX_check_private_key(ConfigServerInfo.client_ctx))
+  if (!SSL_CTX_check_private_key(ConfigServerInfo.tls_ctx.server_ctx) ||
+    !SSL_CTX_check_private_key(ConfigServerInfo.tls_ctx.client_ctx))
   {
     report_crypto_errors();
     return 0;
@@ -234,9 +234,9 @@ tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
   SSL *ssl;
 
   if (role == TLS_ROLE_SERVER)
-    ssl = SSL_new(ConfigServerInfo.server_ctx);
+    ssl = SSL_new(ConfigServerInfo.tls_ctx.server_ctx);
   else
-    ssl = SSL_new(ConfigServerInfo.client_ctx);
+    ssl = SSL_new(ConfigServerInfo.tls_ctx.client_ctx);
 
   if (!ssl)
   {

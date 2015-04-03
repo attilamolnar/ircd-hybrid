@@ -71,6 +71,13 @@ tls_new_cred()
   {
   }
 
+  ConfigServerInfo.message_digest_algorithm = gnutls_digest_get_id(ConfigServerInfo.ssl_message_digest_algorithm);
+  if (ConfigServerInfo.message_digest_algorithm == GNUTLS_DIG_UNKNOWN)
+  {
+    ConfigServerInfo.message_digest_algorithm = GNUTLS_DIG_SHA256;
+    ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
+  }
+
   return 1;
 }
 

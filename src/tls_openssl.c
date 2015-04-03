@@ -97,6 +97,39 @@ tls_init(void)
   SSL_CTX_set_session_cache_mode(ConfigServerInfo.client_ctx, SSL_SESS_CACHE_OFF);
 }
 
+int
+tls_new_cred(char **errstr)
+{
+  if (errstr)
+    *errstr = NULL;
+
+  if (SSL_CTX_use_certificate_chain_file(ConfigServerInfo.server_ctx, ConfigServerInfo.ssl_certificate_file) <= 0 ||
+    SSL_CTX_use_certificate_chain_file(ConfigServerInfo.client_ctx, ConfigServerInfo.ssl_certificate_file) <= 0)
+  {
+    report_crypto_errors();
+    conf_error_report("Could not open/read certificate file");
+    return 0;
+  }
+
+  if (SSL_CTX_use_PrivateKey_file(ConfigServerInfo.server_ctx, ConfigServerInfo.rsa_private_key_file, SSL_FILETYPE_PEM) <= 0 ||
+    SSL_CTX_use_PrivateKey_file(ConfigServerInfo.client_ctx, ConfigServerInfo.rsa_private_key_file, SSL_FILETYPE_PEM) <= 0)
+  {
+    report_crypto_errors();
+    conf_error_report("Could not read RSA private key");
+    return 0;
+  }
+
+  if (!SSL_CTX_check_private_key(ConfigServerInfo.server_ctx) ||
+    !SSL_CTX_check_private_key(ConfigServerInfo.client_ctx))
+  {
+    report_crypto_errors();
+    conf_error_report("Could not read RSA private key");
+    return 0;
+  }
+
+  return 1;
+}
+
 const char *
 tls_get_cipher(const tls_data_t *tls_data)
 {
@@ -245,9 +278,14 @@ tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
 	case SSL_ERROR_WANT_READ:
       return TLS_HANDSHAKE_WANT_READ;
 	default:
+  {
+    const char *error = ERR_error_string(ERR_get_error(), NULL);
+    printf("ERROR %s\n", error);
+
 	  if (errstr)
-	    *errstr = ERR_error_string(ERR_get_error(), NULL);
+	    *errstr = error;
 	  return TLS_HANDSHAKE_ERROR;
+  }
   }
 }
 

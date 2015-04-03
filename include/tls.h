@@ -48,6 +48,7 @@ typedef enum _tls_handshake_status
 } tls_handshake_status_t;
 
 extern void tls_init(void);
+extern int tls_new_cred(char **);
 
 extern const char *tls_get_cipher(const tls_data_t *);
 

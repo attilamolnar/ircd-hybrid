@@ -1,5 +1,6 @@
+#line 2 "conf_lexer.c"
 
-#line 3 "conf_lexer.c"
+#line 4 "conf_lexer.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -8,7 +9,7 @@
 #define FLEX_SCANNER
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
-#define YY_FLEX_SUBMINOR_VERSION 39
+#define YY_FLEX_SUBMINOR_VERSION 37
 #if YY_FLEX_SUBMINOR_VERSION > 0
 #define FLEX_BETA
 #endif
@@ -167,7 +168,6 @@ extern FILE *yyin, *yyout;
 #define EOB_ACT_LAST_MATCH 2
 
     #define YY_LESS_LINENO(n)
-    #define YY_LINENO_REWIND_TO(ptr)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -1979,6 +1979,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
     
+#line 80 "conf_lexer.l"
+
+#line 1984 "conf_lexer.c"
+
 	if ( !(yy_init) )
 		{
 		(yy_init) = 1;
@@ -2005,11 +2009,6 @@ YY_DECL
 		yy_load_buffer_state( );
 		}
 
-	{
-#line 80 "conf_lexer.l"
-
-#line 2012 "conf_lexer.c"
-
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
 		(yy_more_len) = 0;
@@ -2032,7 +2031,7 @@ YY_DECL
 yy_match:
 		do
 			{
-			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)] ;
+			register YY_CHAR yy_c = yy_ec[YY_SC_TO_UI(*yy_cp)];
 			if ( yy_accept[yy_current_state] )
 				{
 				(yy_last_accepting_state) = yy_current_state;
@@ -3402,7 +3401,7 @@ YY_RULE_SETUP
 #line 384 "conf_lexer.l"
 ECHO;
 	YY_BREAK
-#line 3406 "conf_lexer.c"
+#line 3404 "conf_lexer.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -3532,7 +3531,6 @@ ECHO;
 			"fatal flex scanner internal error--no action found" );
 	} /* end of action switch */
 		} /* end of scanning one token */
-	} /* end of user's declarations */
 } /* end of yylex */
 
 /* yy_get_next_buffer - try to read in a new buffer

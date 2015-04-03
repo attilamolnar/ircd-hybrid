@@ -97,6 +97,7 @@ tls_isusing(tls_data_t *tls_data)
 void
 tls_free(tls_data_t *tls_data)
 {
+  gnutls_deinit(tls_data);
 }
 
 int
@@ -147,7 +148,6 @@ void
 tls_shutdown(tls_data_t *tls_data)
 {
   gnutls_bye(tls_data, GNUTLS_SHUT_WR);
-  gnutls_deinit(tls_data);
 }
 
 int

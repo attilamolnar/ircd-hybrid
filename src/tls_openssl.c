@@ -102,6 +102,9 @@ tls_init(void)
 int
 tls_new_cred()
 {
+  if (!ConfigServerInfo.ssl_certificate_file || !ConfigServerInfo.rsa_private_key_file)
+    return 1;
+
   if (SSL_CTX_use_certificate_chain_file(ConfigServerInfo.tls_ctx.server_ctx, ConfigServerInfo.ssl_certificate_file) <= 0 ||
     SSL_CTX_use_certificate_chain_file(ConfigServerInfo.tls_ctx.client_ctx, ConfigServerInfo.ssl_certificate_file) <= 0)
   {
@@ -123,11 +126,18 @@ tls_new_cred()
     return 0;
   }
 
-  ConfigServerInfo.message_digest_algorithm = EVP_get_digestbyname(ConfigServerInfo.ssl_message_digest_algorithm);
-  if (ConfigServerInfo.message_digest_algorithm == NULL)
+  if (ConfigServerInfo.ssl_message_digest_algorithm == NULL)
   {
     ConfigServerInfo.message_digest_algorithm = EVP_sha256();
-    ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
+  }
+  else
+  {
+    ConfigServerInfo.message_digest_algorithm = EVP_get_digestbyname(ConfigServerInfo.ssl_message_digest_algorithm);
+    if (ConfigServerInfo.message_digest_algorithm == NULL)
+    {
+      ConfigServerInfo.message_digest_algorithm = EVP_sha256();
+      ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
+    }
   }
 
   return 1;

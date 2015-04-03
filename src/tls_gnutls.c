@@ -132,6 +132,8 @@ tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
 void
 tls_shutdown(tls_data_t *tls_data)
 {
+  gnutls_bye(tls_data, GNUTLS_SHUT_WR);
+  gnutls_deinit(tls_data);
 }
 
 int

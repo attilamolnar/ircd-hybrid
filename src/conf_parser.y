@@ -51,7 +51,6 @@
 #include "numeric.h"
 #include "user.h"
 #include "motd.h"
-
 #include "rsa.h"
 
 int yylex(void);
@@ -1028,8 +1027,7 @@ oper_entry: OPERATOR
 
     conf_add_class_to_conf(conf, block_state.class.buf);
 
-#ifdef HAVE_LIBCRYPTO
-#if 0
+#ifdef HAVE_TLS_OPENSSL
     if (block_state.file.buf[0])
     {
       BIO *file = NULL;
@@ -1054,8 +1052,7 @@ oper_entry: OPERATOR
       BIO_set_close(file, BIO_CLOSE);
       BIO_free(file);
     }
-#endif
-#endif /* HAVE_LIBCRYPTO */
+#endif /* HAVE_TLS_OPENSSL */
   }
 };
 

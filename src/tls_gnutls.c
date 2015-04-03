@@ -163,9 +163,7 @@ tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
   gnutls_priority_set(*tls_data, ConfigServerInfo.tls_ctx.priorities);
   gnutls_credentials_set(*tls_data, GNUTLS_CRD_CERTIFICATE, ConfigServerInfo.tls_ctx.x509_cred);
   //gnutls_dh_set_prime_bits(session->sess, dh_bits);
-  //gnutls_transport_set_ptr(session->sess, reinterpret_cast<gnutls_transport_ptr_t>(session));
-  //gnutls_transport_set_push_function(session->sess, gnutls_push_wrapper);
-  //gnutls_transport_set_pull_function(session->sess, gnutls_pull_wrapper);
+  gnutls_transport_set_int(*tls_data, fd);
 
   if (role == TLS_ROLE_SERVER)
     gnutls_certificate_server_set_request(*tls_data, GNUTLS_CERT_REQUEST); // Request client certificate if any.

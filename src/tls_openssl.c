@@ -126,7 +126,64 @@ tls_new_cred()
     return 0;
   }
 
-  // XXX SSL_CTX_set_tmp_ecdh
+  if (ConfigServerInfo.ssl_dh_param_file)
+  {
+    BIO *file = BIO_new_file(ConfigServerInfo.ssl_dh_param_file, "r");
+
+    if (file)
+    {
+      DH *dh = PEM_read_bio_DHparams(file, NULL, NULL, NULL);
+
+      BIO_free(file);
+
+      if (dh)
+      {
+        if (DH_size(dh) >= 128)
+          SSL_CTX_set_tmp_dh(ConfigServerInfo.tls_ctx.server_ctx, dh);
+        else
+          ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_dh_param_file -- need at least a 1024 bit DH prime size");
+
+        DH_free(dh);
+      }
+    }
+    else
+      ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_dh_param_file -- could not open/read Diffie-Hellman parameter file");
+  }
+
+#if OPENSSL_VERSION_NUMBER >= 0x009080FFL && !defined(OPENSSL_NO_ECDH)
+  if (ConfigServerInfo.ssl_dh_elliptic_curve != NULL)
+  {
+    int nid = 0;
+    EC_KEY *key = NULL;
+
+    if ((nid = OBJ_sn2nid(ConfigServerInfo.ssl_dh_elliptic_curve)) == 0)
+    {
+      goto set_default_curve;
+    }
+
+    if ((key = EC_KEY_new_by_curve_name(nid)) == NULL)
+    {
+      goto set_default_curve;
+    }
+
+    SSL_CTX_set_tmp_ecdh(ConfigServerInfo.tls_ctx.server_ctx, key);
+    EC_KEY_free(key);
+  }
+  else
+  {
+    EC_KEY *key;
+
+   set_default_curve:
+
+    key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+
+    if (key)
+    {
+      SSL_CTX_set_tmp_ecdh(ConfigServerInfo.tls_ctx.server_ctx, key);
+      EC_KEY_free(key);
+    }
+  }
+#endif
 
   if (ConfigServerInfo.ssl_message_digest_algorithm == NULL)
   {

@@ -54,10 +54,6 @@ tls_init(void)
     exit(EXIT_FAILURE);
   }
 
-//  gnutls_dh_params_t dh_params;
-//  ret = gnutls_dh_params_init(&dh_params);
-  // XXX load dhparams from file?
-
   gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, "NORMAL", NULL);
 }
 
@@ -76,6 +72,30 @@ tls_new_cred()
     return 0;
   }
 
+  if (ConfigServerInfo.ssl_dh_param_file)
+  {
+    gnutls_datum_t data;
+
+    ret = gnutls_load_file(ConfigServerInfo.ssl_dh_param_file, &data);
+    if (ret != GNUTLS_E_SUCCESS)
+    {
+      goto generate_dh_params;
+    }
+
+    ret = gnutls_dh_params_import_pkcs3(ConfigServerInfo.tls_ctx.dh_params, &data, GNUTLS_X509_FMT_PEM);
+    if (ret != GNUTLS_E_SUCCESS)
+    {
+      goto generate_dh_params;
+    }
+  }
+  else
+  {
+   generate_dh_params:
+    gnutls_dh_params_generate2(ConfigServerInfo.tls_ctx.dh_params, 1024);
+  }
+
+  gnutls_certificate_set_dh_params(ConfigServerInfo.tls_ctx.x509_cred, ConfigServerInfo.tls_ctx.dh_params);
+
   if (ConfigServerInfo.ssl_message_digest_algorithm == NULL)
   {
     ConfigServerInfo.message_digest_algorithm = GNUTLS_DIG_SHA256;
@@ -86,7 +106,7 @@ tls_new_cred()
     if (ConfigServerInfo.message_digest_algorithm == GNUTLS_DIG_UNKNOWN)
     {
       ConfigServerInfo.message_digest_algorithm = GNUTLS_DIG_SHA256;
-     ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
+      ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_message_digest_algorithm -- unknown message digest algorithm");
     }
   }
 

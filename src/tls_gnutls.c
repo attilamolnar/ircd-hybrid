@@ -117,6 +117,11 @@ tls_new_cred()
   return 1;
 }
 
+static void
+tls_free_cred(tls_context_t *cred)
+{
+}
+
 inline static const char *
 UnknownIfNULL(const char* str)
 {
@@ -129,9 +134,9 @@ tls_get_cipher(const tls_data_t *tls_data)
   static char buffer[IRCD_BUFSIZE];
 
   snprintf(buffer, sizeof(buffer), "%s-%s-%s",
-           UnknownIfNULL(gnutls_kx_get_name(gnutls_kx_get(*tls_data))),
-           UnknownIfNULL(gnutls_cipher_get_name(gnutls_cipher_get(*tls_data))),
-           UnknownIfNULL(gnutls_mac_get_name(gnutls_mac_get(*tls_data))));
+           UnknownIfNULL(gnutls_kx_get_name(gnutls_kx_get(tls_data->session))),
+           UnknownIfNULL(gnutls_cipher_get_name(gnutls_cipher_get(tls_data->session))),
+           UnknownIfNULL(gnutls_mac_get_name(gnutls_mac_get(tls_data->session))));
 
   return buffer;
 }
@@ -139,19 +144,19 @@ tls_get_cipher(const tls_data_t *tls_data)
 int
 tls_isusing(tls_data_t *tls_data)
 {
-  return *tls_data != NULL;
+  return tls_data->session != NULL;
 }
 
 void
 tls_free(tls_data_t *tls_data)
 {
-  gnutls_deinit(*tls_data);
+  gnutls_deinit(tls_data->session);
 }
 
 int
 tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
 {
-  int length = gnutls_record_recv(*tls_data, buf, bufsize);
+  int length = gnutls_record_recv(tls_data->session, buf, bufsize);
 
   if (length <= 0)
   {
@@ -172,7 +177,7 @@ tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
 int
 tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
 {
-  int length = gnutls_record_send(*tls_data, buf, bufsize);
+  int length = gnutls_record_send(tls_data->session, buf, bufsize);
 
   if (length <= 0)
   {
@@ -193,21 +198,32 @@ tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
 void
 tls_shutdown(tls_data_t *tls_data)
 {
-  gnutls_bye(*tls_data, GNUTLS_SHUT_WR);
+  gnutls_bye(tls_data->session, GNUTLS_SHUT_WR);
+
+  if (--tls_data->context->refs == 0)
+  {
+    tls_free_cred(tls_data->context);
+  }
+
+  tls_data->session = NULL;
+  tls_data->context = NULL;
 }
 
 int
 tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
 {
-  gnutls_init(tls_data, role == TLS_ROLE_SERVER ? GNUTLS_SERVER : GNUTLS_CLIENT);
+  gnutls_init(&tls_data->session, role == TLS_ROLE_SERVER ? GNUTLS_SERVER : GNUTLS_CLIENT);
 
-  gnutls_priority_set(*tls_data, ConfigServerInfo.tls_ctx.priorities);
-  gnutls_credentials_set(*tls_data, GNUTLS_CRD_CERTIFICATE, ConfigServerInfo.tls_ctx.x509_cred);
-  gnutls_dh_set_prime_bits(session->sess, 1024);
-  gnutls_transport_set_int(*tls_data, fd);
+  tls_data->context = &ConfigServerInfo.tls_ctx;
+  ++tls_data->context->refs;
+
+  gnutls_priority_set(tls_data->session, tls_data->context->priorities);
+  gnutls_credentials_set(tls_data->session, GNUTLS_CRD_CERTIFICATE, tls_data->context->x509_cred);
+  gnutls_dh_set_prime_bits(tls_data->session, 1024);
+  gnutls_transport_set_int(tls_data->session, fd);
 
   if (role == TLS_ROLE_SERVER)
-    gnutls_certificate_server_set_request(*tls_data, GNUTLS_CERT_REQUEST); // Request client certificate if any.
+    gnutls_certificate_server_set_request(tls_data->session, GNUTLS_CERT_REQUEST); // Request client certificate if any.
 
   return 1;
 }
@@ -235,7 +251,7 @@ tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
 tls_handshake_status_t
 tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
 {
-  int ret = gnutls_handshake(*tls_data);
+  int ret = gnutls_handshake(tls_data->session);
 
   if (ret >= 0)
     return TLS_HANDSHAKE_DONE;
@@ -244,7 +260,7 @@ tls_handshake(tls_data_t *tls_data, tls_role_t role, const char **errstr)
   {
     // Handshake needs resuming later, read() or write() would have blocked.
 
-    if (gnutls_record_get_direction(*tls_data) == 0)
+    if (gnutls_record_get_direction(tls_data->session) == 0)
     {
       // gnutls_handshake() wants to read() again.
       return TLS_HANDSHAKE_WANT_READ;
@@ -278,7 +294,7 @@ tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *
   char buf[IRCD_BUFSIZE];
 
   cert_list_size = 0;
-  cert_list = gnutls_certificate_get_peers(*tls_data, &cert_list_size);
+  cert_list = gnutls_certificate_get_peers(tls_data->session, &cert_list_size);
   if (cert_list == NULL)
   {
     /* no certificate */

@@ -126,8 +126,9 @@ am_ircd_OBJECTS = auth.$(OBJEXT) channel.$(OBJEXT) \
 	s_bsd_kqueue.$(OBJEXT) res.$(OBJEXT) reslib.$(OBJEXT) \
 	restart.$(OBJEXT) resv.$(OBJEXT) rng_mt.$(OBJEXT) \
 	rsa.$(OBJEXT) s_bsd.$(OBJEXT) send.$(OBJEXT) server.$(OBJEXT) \
-	tls_gnutls.$(OBJEXT) tls_openssl.$(OBJEXT) user.$(OBJEXT) \
-	version.$(OBJEXT) watch.$(OBJEXT) whowas.$(OBJEXT)
+	tls_gnutls.$(OBJEXT) tls_none.$(OBJEXT) tls_openssl.$(OBJEXT) \
+	user.$(OBJEXT) version.$(OBJEXT) watch.$(OBJEXT) \
+	whowas.$(OBJEXT)
 ircd_OBJECTS = $(am_ircd_OBJECTS)
 am__DEPENDENCIES_1 =
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -411,7 +412,8 @@ ircd_SOURCES = auth.c            \
                s_bsd.c           \
                send.c            \
                server.c          \
-	       tls_gnutls.c      \
+               tls_gnutls.c      \
+               tls_none.c        \
                tls_openssl.c     \
                user.c            \
                version.c         \
@@ -563,6 +565,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/send.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_gnutls.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_none.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_openssl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/user.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/version.Po@am__quote@

@@ -19,17 +19,69 @@
  *  USA
  */
 
-/*! \file tls_none.h
- * \brief A header for builds that do not support a TLS library
+/*! \file tls_none.c
+ * \brief Dummy file for no TLS support
  * \version $Id$
  */
 
+#include "stdinc.h"
+#include "tls.h"
 
-#ifndef INCLUDED_tls_none_h
-#define INCLUDED_tls_none_h
+#ifndef HAVE_TLS
 
-typedef void * tls_data_t;
-typedef void * tls_md_t;
-typedef void * tls_context_t;
+void
+tls_init(void)
+{
+}
 
-#endif /* INCLUDED_tls_none_h */
+int
+tls_new_cred()
+{
+}
+
+const char *
+tls_get_cipher(const tls_data_t *tls_data)
+{
+}
+
+int
+tls_isusing(tls_data_t *tls_data)
+{
+}
+
+void
+tls_free(tls_data_t *tls_data)
+{
+}
+
+int
+tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
+{
+}
+
+int
+tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
+{
+}
+
+void
+tls_shutdown(tls_data_t *tls_data)
+{
+}
+
+int
+tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
+{
+}
+
+int
+tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
+{
+}
+
+int
+tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *raw_result)
+{
+}
+
+#endif /* HAVE_TLS */

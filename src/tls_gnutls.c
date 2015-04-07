@@ -97,19 +97,18 @@ tls_new_cred()
     ret = gnutls_load_file(ConfigServerInfo.ssl_dh_param_file, &data);
     if (ret != GNUTLS_E_SUCCESS)
     {
-      goto generate_dh_params;
+      ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_dh_param_file -- unable to load file -- %s", gnutls_strerror(ret));
     }
-
-    ret = gnutls_dh_params_import_pkcs3(context->dh_params, &data, GNUTLS_X509_FMT_PEM);
-    if (ret != GNUTLS_E_SUCCESS)
+    else
     {
-      goto generate_dh_params;
+      ret = gnutls_dh_params_import_pkcs3(context->dh_params, &data, GNUTLS_X509_FMT_PEM);
+      if (ret != GNUTLS_E_SUCCESS)
+      {
+        ilog(LOG_TYPE_IRCD, "Ignoring serverinfo::ssl_dh_param_file -- unable to import dh params -- %s", gnutls_strerror(ret));
+      }
+
+      gnutls_free(data.data);
     }
-  }
-  else
-  {
-   generate_dh_params:
-    gnutls_dh_params_generate2(context->dh_params, 1024);
   }
 
   gnutls_certificate_set_dh_params(context->x509_cred, context->dh_params);

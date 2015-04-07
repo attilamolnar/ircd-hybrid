@@ -72,6 +72,8 @@ tls_new_cred()
     return 0;
   }
 
+  gnutls_dh_params_init(&ConfigServerInfo.tls_ctx.dh_params);
+
   if (ConfigServerInfo.ssl_dh_param_file)
   {
     gnutls_datum_t data;

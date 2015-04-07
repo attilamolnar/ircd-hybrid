@@ -44,6 +44,8 @@ tls_init(void)
 {
   int ret;
 
+  gnutls_global_init();
+
   ret = gnutls_certificate_allocate_credentials(&ConfigServerInfo.tls_ctx.x509_cred);
   if (ret < 0)
   {

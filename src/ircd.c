@@ -440,15 +440,17 @@ main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
 
-  tls_init();
-
   if (!server_state.foreground)
   {
     make_daemon();
-    close_standard_fds(); /* this needs to be before init_netio()! */
+    //https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=768841 says close_standard_fds should be ok
+    //since we are initing gnutls explicitly on the other side, but it doesn't work for me
+    //close_standard_fds(); /* this needs to be before init_netio()! */
   }
   else
     print_startup(getpid());
+
+  tls_init();
 
   setup_signals();
 

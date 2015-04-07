@@ -44,6 +44,16 @@ tls_init(void)
 {
 }
 
+static void
+tls_free_cred(tls_context_t cred)
+{
+  gnutls_priority_deinit(cred->priorities);
+  gnutls_dh_params_deinit(cred->dh_params);
+  gnutls_certificate_free_credentials(cred->x509_cred);
+
+  MyFree(cred);
+}
+
 int
 tls_new_cred()
 {
@@ -116,19 +126,15 @@ tls_new_cred()
     }
   }
 
+  if (ConfigServerInfo.tls_ctx && --ConfigServerInfo.tls_ctx->refs == 0)
+  {
+    tls_free_cred(ConfigServerInfo.tls_ctx);
+  }
+
   ConfigServerInfo.tls_ctx = context;
+  ++context->refs;
 
   return 1;
-}
-
-static void
-tls_free_cred(tls_context_t cred)
-{
-  gnutls_priority_deinit(cred->priorities);
-  gnutls_dh_params_deinit(cred->dh_params);
-  gnutls_certificate_free_credentials(cred->x509_cred);
-
-  MyFree(cred);
 }
 
 inline static const char *

@@ -33,12 +33,6 @@
 
 #ifdef HAVE_TLS_GNUTLS
 
-/* tls_init()
- *
- * inputs       - nothing
- * output       - nothing
- * side effects - setups SSL context.
- */
 void
 tls_init(void)
 {
@@ -256,7 +250,8 @@ tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
   if (ret < 0)
   {
     // gnutls did not understand the user supplied string, log and fall back to the default priorities
-    ilog(LOG_TYPE_IRCD, "Failed to set gnutls priorities to \"%s\": %s Syntax error at position %u, falling back to default (NORMAL)", cipher_list, gnutls_strerror(ret), (unsigned int) (prioerror - cipher_list));
+    ilog(LOG_TYPE_IRCD, "Failed to set gnutls priorities to \"%s\": %s Syntax error at position %u, falling back to default (NORMAL)",
+         cipher_list, gnutls_strerror(ret), (unsigned int) (prioerror - cipher_list));
     gnutls_priority_init(&tls_data->context->priorities, "NORMAL", NULL);
     return 0;
   }

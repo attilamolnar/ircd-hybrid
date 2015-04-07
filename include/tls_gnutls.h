@@ -37,19 +37,20 @@
 #include <gnutls/x509.h>
 
 typedef gnutls_digest_algorithm_t tls_md_t;
+typedef struct gnutls_context * tls_context_t;
 
-typedef struct
+struct gnutls_context
 {
   gnutls_certificate_credentials_t x509_cred;
   gnutls_priority_t priorities;
   gnutls_dh_params_t dh_params;
   unsigned int refs;
-} tls_context_t;
+};
 
 typedef struct
 {
   gnutls_session_t session;
-  tls_context_t *context;
+  tls_context_t context;
 } tls_data_t;
 
 #endif /* defined(HAVE_LIBGNUTLS) && !defined(HAVE_LIBCRYPTO) */

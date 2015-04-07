@@ -42,39 +42,41 @@
 void
 tls_init(void)
 {
-  int ret;
-
-  gnutls_global_init();
-
-  ret = gnutls_certificate_allocate_credentials(&ConfigServerInfo.tls_ctx.x509_cred);
-  if (ret < 0)
-  {
-    const char *error = gnutls_strerror(ret);
-
-    fprintf(stderr, "ERROR: Could not initialize the SSL credentials -- %s\n", error);
-    ilog(LOG_TYPE_IRCD, "ERROR: Could not initialize the SSL credentials -- %s", error);
-    exit(EXIT_FAILURE);
-  }
-
-  gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, "NORMAL", NULL);
 }
 
 int
 tls_new_cred()
 {
   int ret;
+  struct gnutls_context *context;
 
   if (!ConfigServerInfo.ssl_certificate_file || !ConfigServerInfo.rsa_private_key_file)
     return 0;
 
-  ret = gnutls_certificate_set_x509_key_file(ConfigServerInfo.tls_ctx.x509_cred, ConfigServerInfo.ssl_certificate_file, ConfigServerInfo.rsa_private_key_file, GNUTLS_X509_FMT_PEM);
+  context = MyCalloc(sizeof(struct gnutls_context));
+
+  gnutls_global_init();
+
+  ret = gnutls_certificate_allocate_credentials(&context->x509_cred);
+  if (ret < 0)
+  {
+    const char *error = gnutls_strerror(ret);
+
+   // fprintf(stderr, "ERROR: Could not initialize the SSL credentials -- %s\n", error);
+  //  ilog(LOG_TYPE_IRCD, "ERROR: Could not initialize the SSL credentials -- %s", error);
+//    exit(EXIT_FAILURE);
+  }
+
+  gnutls_priority_init(&context->priorities, "NORMAL", NULL);
+
+  ret = gnutls_certificate_set_x509_key_file(context->x509_cred, ConfigServerInfo.ssl_certificate_file, ConfigServerInfo.rsa_private_key_file, GNUTLS_X509_FMT_PEM);
   if (ret < 0)
   {
     ilog(LOG_TYPE_IRCD, "Could not set TLS keys -- %s", gnutls_strerror(ret));
     return 0;
   }
 
-  gnutls_dh_params_init(&ConfigServerInfo.tls_ctx.dh_params);
+  gnutls_dh_params_init(&context->dh_params);
 
   if (ConfigServerInfo.ssl_dh_param_file)
   {
@@ -86,7 +88,7 @@ tls_new_cred()
       goto generate_dh_params;
     }
 
-    ret = gnutls_dh_params_import_pkcs3(ConfigServerInfo.tls_ctx.dh_params, &data, GNUTLS_X509_FMT_PEM);
+    ret = gnutls_dh_params_import_pkcs3(context->dh_params, &data, GNUTLS_X509_FMT_PEM);
     if (ret != GNUTLS_E_SUCCESS)
     {
       goto generate_dh_params;
@@ -95,10 +97,10 @@ tls_new_cred()
   else
   {
    generate_dh_params:
-    gnutls_dh_params_generate2(ConfigServerInfo.tls_ctx.dh_params, 1024);
+    gnutls_dh_params_generate2(context->dh_params, 1024);
   }
 
-  gnutls_certificate_set_dh_params(ConfigServerInfo.tls_ctx.x509_cred, ConfigServerInfo.tls_ctx.dh_params);
+  gnutls_certificate_set_dh_params(context->x509_cred, context->dh_params);
 
   if (ConfigServerInfo.ssl_message_digest_algorithm == NULL)
   {
@@ -114,12 +116,19 @@ tls_new_cred()
     }
   }
 
+  ConfigServerInfo.tls_ctx = context;
+
   return 1;
 }
 
 static void
-tls_free_cred(tls_context_t *cred)
+tls_free_cred(tls_context_t cred)
 {
+  gnutls_priority_deinit(cred->priorities);
+  gnutls_dh_params_deinit(cred->dh_params);
+  gnutls_certificate_free_credentials(cred->x509_cred);
+
+  MyFree(cred);
 }
 
 inline static const char *
@@ -214,7 +223,7 @@ tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
 {
   gnutls_init(&tls_data->session, role == TLS_ROLE_SERVER ? GNUTLS_SERVER : GNUTLS_CLIENT);
 
-  tls_data->context = &ConfigServerInfo.tls_ctx;
+  tls_data->context = ConfigServerInfo.tls_ctx;
   ++tls_data->context->refs;
 
   gnutls_priority_set(tls_data->session, tls_data->context->priorities);
@@ -234,14 +243,14 @@ tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
   int ret;
   const char *prioerror;
 
-  gnutls_priority_deinit(ConfigServerInfo.tls_ctx.priorities);
+  gnutls_priority_deinit(tls_data->context->priorities);
 
-  ret = gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, cipher_list, &prioerror);
+  ret = gnutls_priority_init(&tls_data->context->priorities, cipher_list, &prioerror);
   if (ret < 0)
   {
     // gnutls did not understand the user supplied string, log and fall back to the default priorities
     ilog(LOG_TYPE_IRCD, "Failed to set gnutls priorities to \"%s\": %s Syntax error at position %u, falling back to default (NORMAL)", cipher_list, gnutls_strerror(ret), (unsigned int) (prioerror - cipher_list));
-    gnutls_priority_init(&ConfigServerInfo.tls_ctx.priorities, "NORMAL", NULL);
+    gnutls_priority_init(&tls_data->context->priorities, "NORMAL", NULL);
     return 0;
   }
 

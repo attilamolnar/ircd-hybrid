@@ -72,9 +72,9 @@ tls_new_cred()
   {
     const char *error = gnutls_strerror(ret);
 
-   // fprintf(stderr, "ERROR: Could not initialize the SSL credentials -- %s\n", error);
-  //  ilog(LOG_TYPE_IRCD, "ERROR: Could not initialize the SSL credentials -- %s", error);
-//    exit(EXIT_FAILURE);
+    ilog(LOG_TYPE_IRCD, "ERROR: Could not initialize the SSL credentials -- %s", error);
+    MyFree(context);
+    return 0;
   }
 
   gnutls_priority_init(&context->priorities, "NORMAL", NULL);
@@ -83,6 +83,8 @@ tls_new_cred()
   if (ret < 0)
   {
     ilog(LOG_TYPE_IRCD, "Could not set TLS keys -- %s", gnutls_strerror(ret));
+    gnutls_certificate_free_credentials(context->x509_cred);
+    MyFree(context);
     return 0;
   }
 

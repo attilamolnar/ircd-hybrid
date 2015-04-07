@@ -37,16 +37,19 @@ tls_init(void)
 int
 tls_new_cred()
 {
+  return 0;
 }
 
 const char *
 tls_get_cipher(const tls_data_t *tls_data)
 {
+  return NULL;
 }
 
 int
 tls_isusing(tls_data_t *tls_data)
 {
+  return 0;
 }
 
 void
@@ -57,11 +60,13 @@ tls_free(tls_data_t *tls_data)
 int
 tls_read(tls_data_t *tls_data, char *buf, size_t bufsize, int *want_write)
 {
+  return -1;
 }
 
 int
 tls_write(tls_data_t *tls_data, const char *buf, size_t bufsize, int *want_read)
 {
+  return -1;
 }
 
 void
@@ -72,16 +77,19 @@ tls_shutdown(tls_data_t *tls_data)
 int
 tls_new(tls_data_t *tls_data, int fd, tls_role_t role)
 {
+  return 0;
 }
 
 int
 tls_set_ciphers(tls_data_t *tls_data, const char *cipher_list)
 {
+  return 0;
 }
 
 int
 tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *raw_result)
 {
+  return 0;
 }
 
 #endif /* HAVE_TLS */

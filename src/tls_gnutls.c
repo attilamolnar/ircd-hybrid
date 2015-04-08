@@ -45,6 +45,8 @@ tls_free_cred(tls_context_t cred)
   gnutls_dh_params_deinit(cred->dh_params);
   gnutls_certificate_free_credentials(cred->x509_cred);
 
+  gnutls_global_deinit();
+
   MyFree(cred);
 }
 

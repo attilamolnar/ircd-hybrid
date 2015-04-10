@@ -80,6 +80,7 @@ tls_new_cred()
   {
     ilog(LOG_TYPE_IRCD, "Could not set TLS keys -- %s", gnutls_strerror(ret));
     gnutls_certificate_free_credentials(context->x509_cred);
+    gnutls_priority_deinit(cred->priorities);
     MyFree(context);
     return 0;
   }
@@ -216,9 +217,6 @@ tls_shutdown(tls_data_t *tls_data)
   {
     tls_free_cred(tls_data->context);
   }
-
-  tls_data->session = NULL;
-  tls_data->context = NULL;
 }
 
 int
@@ -339,6 +337,7 @@ tls_verify_cert(tls_data_t *tls_data, tls_md_t digest, char **fingerprint, int *
 
  info_done_dealloc:
   gnutls_x509_crt_deinit(cert);
+  *raw_result = 0;
   return 0;
 }
 

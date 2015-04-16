@@ -80,7 +80,7 @@ tls_new_cred()
   {
     ilog(LOG_TYPE_IRCD, "Could not set TLS keys -- %s", gnutls_strerror(ret));
     gnutls_certificate_free_credentials(context->x509_cred);
-    gnutls_priority_deinit(cred->priorities);
+    gnutls_priority_deinit(context->priorities);
     MyFree(context);
     return 0;
   }
